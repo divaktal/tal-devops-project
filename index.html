@@ -90,5 +90,23 @@
     </div>
     
     <script src="script.js"></script>
+    <!-- Scheduling Section -->
+    <div class="scheduling" id="schedule">
+        <h2>Book a Visit</h2>
+        <p>Select your preferred date and time to schedule an appointment with us.</p>
+        <form id="scheduleForm">
+            <label for="date">Choose a date:</label>
+            <input type="date" id="date" name="date" required>
+
+            <label for="time">Choose a time:</label>
+            <input type="time" id="time" name="time" required>
+
+            <button type="submit">Save Appointment</button>
+        </form>
+        <div class="appointments">
+            <h3>Your Scheduled Visits</h3>
+            <ul id="appointmentsList"></ul>
+  </div>
+</div>
 </body>
 </html>

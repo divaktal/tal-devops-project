@@ -68,3 +68,37 @@ function closeModal() {
     var modal = document.getElementById("modal");
     modal.classList.remove("open");
 }
+
+// Appointment Scheduling
+document.getElementById("scheduleForm").addEventListener("submit", function(e) {
+    e.preventDefault();
+    
+    const date = document.getElementById("date").value;
+    const time = document.getElementById("time").value;
+    const appointmentsList = document.getElementById("appointmentsList");
+
+    if (date && time) {
+        const li = document.createElement("li");
+        li.textContent = `📅 ${date} at ⏰ ${time}`;
+        appointmentsList.appendChild(li);
+
+        // Save to localStorage
+        let appointments = JSON.parse(localStorage.getItem("appointments")) || [];
+        appointments.push({ date, time });
+        localStorage.setItem("appointments", JSON.stringify(appointments));
+
+        this.reset();
+    }
+});
+
+// Load saved appointments on page load
+window.addEventListener("DOMContentLoaded", () => {
+    const appointments = JSON.parse(localStorage.getItem("appointments")) || [];
+    const appointmentsList = document.getElementById("appointmentsList");
+
+    appointments.forEach(app => {
+        const li = document.createElement("li");
+        li.textContent = `📅 ${app.date} at ⏰ ${app.time}`;
+        appointmentsList.appendChild(li);
+    });
+});
