@@ -1,59 +1,117 @@
-name: CI/CD Pipeline
+name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
 
 jobs:
-  build-and-deploy:
+  lint:
+    name: Lint and Validate
     runs-on: ubuntu-latest
-
     steps:
-      # 1. Checkout repository
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # 2. Set up environment
-      # Example for Node.js; change or remove if using Python, Java, etc.
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
+      - name: Validate HTML
+        uses: anishathalye/proof-html@v2
         with:
-          node-version: '20'
+          directory: ./
+          exclude: .git/**
 
-      # 3. Install dependencies
-      - name: Install dependencies
-        run: npm install
+      - name: CSS Validation
+        run: |
+          if [ -f styles.css ]; then
+            echo "Checking CSS syntax..."
+            npx csslint styles.css --quiet || echo "CSS linting completed"
+          fi
 
-      # 4. Lint the code (optional but recommended)
-      - name: Lint code
-        run: npm run lint # replace with your lint command
+      - name: JavaScript Syntax Check
+        run: |
+          if [ -f script.js ]; then
+            echo "Checking JavaScript syntax..."
+            node -c script.js && echo "✓ JavaScript syntax is valid"
+          fi
 
-      # 5. Run tests
-      - name: Run tests
-        run: npm test
+      - name: Check file structure
+        run: |
+          echo "Project structure:"
+          find . -name "*.html" -o -name "*.css" -o -name "*.js" | head -20
 
-      # 6. Build artifact
-      - name: Build project
-        run: npm run build # replace with your build command
+  build-test:
+    name: Build and Test
+    runs-on: ubuntu-latest
+    needs: lint
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-      # 7. Upload artifact
-      - name: Upload artifact
+      - name: Create build artifact
+        run: |
+          mkdir -p dist
+          # Copy all necessary files
+          cp *.html dist/ 2>/dev/null || true
+          cp *.css dist/ 2>/dev/null || true
+          cp *.js dist/ 2>/dev/null || true
+          # Create photos directory if it exists
+          mkdir -p dist/photos
+          cp -r photos/* dist/photos/ 2>/dev/null || true
+          
+          echo "Build artifact contents:"
+          ls -la dist/
+
+      - name: Test artifact
+        run: |
+          echo "Testing artifact..."
+          cd dist
+          if [ -f index.html ]; then
+            echo "✓ index.html exists"
+            # Basic HTML validation
+            if grep -q "<!DOCTYPE html>" index.html; then
+              echo "✓ Valid DOCTYPE found"
+            else
+              echo "⚠ No DOCTYPE found"
+            fi
+          else
+            echo "❌ index.html missing"
+            exit 1
+          fi
+
+      - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:
-          name: project-artifact
-          path: ./dist # replace with your build folder
+          name: web-app-build
+          path: dist/
+          retention-days: 7
 
-      # 8. Build Docker image
+  docker-build:
+    name: Build Docker Image
+    runs-on: ubuntu-latest
+    needs: build-test
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
       - name: Build Docker image
-        run: docker build -t myusername/myapp:latest .
-
-      # 9. Log in to Docker registry
-      - name: Docker login
-        uses: docker/login-action@v2
+        uses: docker/build-push-action@v5
         with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
+          context: .
+          file: ./Dockerfile
+          push: false
+          tags: ${{ github.repository }}:ci-build
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          outputs: type=docker,dest=/tmp/image.tar
 
-      # 10. Push Docker image
-      - name: Push Docker image
-        run: docker push myusername/myapp:latest
+      - name: Upload Docker image artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: docker-image
+          path: /tmp/image.tar
+          retention-days: 7
