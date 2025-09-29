@@ -11,12 +11,12 @@ jobs:
     steps:
       # 1. Checkout repository
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       # 2. Set up environment
       # Example for Node.js; change or remove if using Python, Java, etc.
       - name: Set up Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: '20'
 
@@ -38,7 +38,7 @@ jobs:
 
       # 7. Upload artifact
       - name: Upload artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: project-artifact
           path: ./dist # replace with your build folder
