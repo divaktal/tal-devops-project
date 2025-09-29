@@ -1,5 +1,4 @@
 name: CD
-s
 on:
   workflow_run:
     workflows: ["CI"]
