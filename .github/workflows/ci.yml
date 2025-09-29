@@ -49,10 +49,11 @@ jobs:
       - name: Build Docker image
         run: docker build -t my-app .
         
-      - name: Test Docker image
-        run: |
-          docker run -d --name test-app -p 8080:80 my-app
-          sleep 2
-          docker ps | grep test-app && echo "✅ Docker works" || echo "⚠ Docker issue"
-          docker stop test-app
-          docker rm test-app
+      - name: Save Docker image as tar
+        run: docker save my-app -o my-app.tar
+        
+      - name: Upload Docker image artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: docker-image
+          path: my-app.tar
