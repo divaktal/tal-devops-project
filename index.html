@@ -22,6 +22,7 @@
         <a href="#services" aria-label="Services">Services</a>
         <a href="#portfolio" aria-label="Portfolio">Portfolio</a>
         <a href="#contact" aria-label="Contact">Contact</a>
+        <a href="#schedule" aria-label="Schedule Appointment">Schedule</a>
     </nav>
     
     <!-- Hero Section -->
@@ -40,24 +41,80 @@
     <div class="portfolio" id="portfolio">
         <h2>Portfolio</h2>
         <div class="gallery">
-            <div class="gallery-item">
+            <div class="gallery-item" onclick="openModal('photos/image1.jpg', 'Elegant Evening Gown')">
                 <img src="photos/image1.jpg" alt="Elegant Evening Gown">
                 <div class="caption">Elegant Evening Gown - Perfect for formal events.</div>
             </div>
-            <div class="gallery-item">
+            <div class="gallery-item" onclick="openModal('photos/image2.jpg', 'Summer Dress')">
                 <img src="photos/image2.jpg" alt="Summer Dress">
                 <div class="caption">Summer Dress - Light and breezy for sunny days.</div>
             </div>
-            <div class="gallery-item">
+            <div class="gallery-item" onclick="openModal('photos/image3.jpg', 'Bridal Gown')">
                 <img src="photos/image3.jpg" alt="Bridal Gown">
                 <div class="caption">Bridal Gown - A dream dress for your special day.</div>
             </div>
-            <div class="gallery-item">
+            <div class="gallery-item" onclick="openModal('photos/image4.jpg', 'Casual Wear')">
                 <img src="photos/image4.jpg" alt="Casual Wear">
                 <div class="caption">Casual Wear - Comfortable yet stylish for everyday wear.</div>
             </div>
         </div>
     </div>
+    
+   <!-- Scheduling Section -->
+<div class="scheduling" id="schedule">
+    <h2>Book a Visit</h2>
+    <p class="subtitle">Schedule your personalized consultation with us</p>
+    <form id="scheduleForm">
+        <div class="form-row">
+            <div class="form-group">
+                <label for="firstName">First Name</label>
+                <input type="text" id="firstName" name="firstName" placeholder="Your first name" required>
+            </div>
+            <div class="form-group">
+                <label for="familyName">Family Name</label>
+                <input type="text" id="familyName" name="familyName" placeholder="Your family name" required>
+            </div>
+        </div>
+        
+        <div class="form-group">
+            <label for="phone">Phone Number</label>
+            <input type="tel" id="phone" name="phone" placeholder="Your phone number" required>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label for="date">Preferred Date</label>
+                <input type="date" id="date" name="date" required>
+            </div>
+            <div class="form-group">
+                <label for="time">Preferred Time</label>
+                <select id="time" name="time" required>
+                    <option value="">Select an hour</option>
+                    <option value="09:00">9:00 AM</option>
+                    <option value="10:00">10:00 AM</option>
+                    <option value="11:00">11:00 AM</option>
+                    <option value="12:00">12:00 PM</option>
+                    <option value="13:00">1:00 PM</option>
+                    <option value="14:00">2:00 PM</option>
+                    <option value="15:00">3:00 PM</option>
+                    <option value="16:00">4:00 PM</option>
+                    <option value="17:00">5:00 PM</option>
+                </select>
+            </div>
+        </div>
+
+        <button type="submit" class="submit-btn">
+            <span class="btn-text">Schedule Appointment</span>
+            <span class="btn-icon">📅</span>
+        </button>
+    </form>
+    
+    <div class="confirmation-message" id="confirmationMessage" style="display: none;">
+        <div class="confirmation-icon">✅</div>
+        <h3>Appointment Scheduled!</h3>
+        <p>We've received your booking and will contact you shortly to confirm.</p>
+    </div>
+</div>
     
     <!-- Contact Section -->
     <div class="contact" id="contact">
@@ -90,23 +147,5 @@
     </div>
     
     <script src="script.js"></script>
-    <!-- Scheduling Section -->
-    <div class="scheduling" id="schedule">
-        <h2>Book a Visit</h2>
-        <p>Select your preferred date and time to schedule an appointment with us.</p>
-        <form id="scheduleForm">
-            <label for="date">Choose a date:</label>
-            <input type="date" id="date" name="date" required>
-
-            <label for="time">Choose a time:</label>
-            <input type="time" id="time" name="time" required>
-
-            <button type="submit">Save Appointment</button>
-        </form>
-        <div class="appointments">
-            <h3>Your Scheduled Visits</h3>
-            <ul id="appointmentsList"></ul>
-  </div>
-</div>
 </body>
 </html>

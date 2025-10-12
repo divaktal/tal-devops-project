@@ -73,32 +73,30 @@ function closeModal() {
 document.getElementById("scheduleForm").addEventListener("submit", function(e) {
     e.preventDefault();
     
+    const firstName = document.getElementById("firstName").value;
+    const familyName = document.getElementById("familyName").value;
+    const phone = document.getElementById("phone").value;
     const date = document.getElementById("date").value;
     const time = document.getElementById("time").value;
-    const appointmentsList = document.getElementById("appointmentsList");
 
-    if (date && time) {
-        const li = document.createElement("li");
-        li.textContent = `📅 ${date} at ⏰ ${time}`;
-        appointmentsList.appendChild(li);
-
+    if (firstName && familyName && phone && date && time) {
         // Save to localStorage
         let appointments = JSON.parse(localStorage.getItem("appointments")) || [];
-        appointments.push({ date, time });
+        appointments.push({ firstName, familyName, phone, date, time });
         localStorage.setItem("appointments", JSON.stringify(appointments));
 
-        this.reset();
+        // Show confirmation message
+        const confirmationMessage = document.getElementById("confirmationMessage");
+        confirmationMessage.style.display = 'block';
+        
+        // Hide form
+        this.style.display = 'none';
+        
+        // Reset form for potential new entry
+        setTimeout(() => {
+            this.reset();
+            this.style.display = 'block';
+            confirmationMessage.style.display = 'none';
+        }, 5000);
     }
-});
-
-// Load saved appointments on page load
-window.addEventListener("DOMContentLoaded", () => {
-    const appointments = JSON.parse(localStorage.getItem("appointments")) || [];
-    const appointmentsList = document.getElementById("appointmentsList");
-
-    appointments.forEach(app => {
-        const li = document.createElement("li");
-        li.textContent = `📅 ${app.date} at ⏰ ${app.time}`;
-        appointmentsList.appendChild(li);
-    });
 });
