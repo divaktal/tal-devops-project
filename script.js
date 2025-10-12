@@ -69,8 +69,8 @@ function closeModal() {
     modal.classList.remove("open");
 }
 
-// Appointment Scheduling
-document.getElementById("scheduleForm").addEventListener("submit", function(e) {
+// Appointment Scheduling with Database
+document.getElementById("scheduleForm").addEventListener("submit", async function(e) {
     e.preventDefault();
     
     const firstName = document.getElementById("firstName").value;
@@ -80,23 +80,43 @@ document.getElementById("scheduleForm").addEventListener("submit", function(e) {
     const time = document.getElementById("time").value;
 
     if (firstName && familyName && phone && date && time) {
-        // Save to localStorage
-        let appointments = JSON.parse(localStorage.getItem("appointments")) || [];
-        appointments.push({ firstName, familyName, phone, date, time });
-        localStorage.setItem("appointments", JSON.stringify(appointments));
+        try {
+            const response = await fetch('/api/appointments', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    firstName,
+                    familyName,
+                    phone,
+                    date,
+                    time
+                })
+            });
 
-        // Show confirmation message
-        const confirmationMessage = document.getElementById("confirmationMessage");
-        confirmationMessage.style.display = 'block';
-        
-        // Hide form
-        this.style.display = 'none';
-        
-        // Reset form for potential new entry
-        setTimeout(() => {
-            this.reset();
-            this.style.display = 'block';
-            confirmationMessage.style.display = 'none';
-        }, 5000);
+            if (response.ok) {
+                const result = await response.json();
+                
+                // Show confirmation message
+                const confirmationMessage = document.getElementById("confirmationMessage");
+                confirmationMessage.style.display = 'block';
+                
+                // Hide form
+                this.style.display = 'none';
+                
+                // Reset form
+                setTimeout(() => {
+                    this.reset();
+                    this.style.display = 'block';
+                    confirmationMessage.style.display = 'none';
+                }, 5000);
+            } else {
+                throw new Error('Failed to save appointment');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Sorry, there was an error saving your appointment. Please try again.');
+        }
     }
 });
