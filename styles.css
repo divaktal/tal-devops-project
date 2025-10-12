@@ -472,6 +472,25 @@ nav a:hover {
     border-radius: 5px;
     width: 200px;
 }
+/* Validation styling */
+.error-message {
+    color: #dc3545;
+    font-size: 12px;
+    margin-top: 5px;
+    display: block;
+}
+
+.form-group input:invalid {
+    border-color: #dc3545;
+}
+
+.form-group input:valid {
+    border-color: #28a745;
+}
+
+.form-group:has(.error-message) input {
+    border-color: #dc3545;
+}
 
 /* Scheduling Section */
 .scheduling {
