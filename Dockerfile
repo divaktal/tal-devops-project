@@ -12,7 +12,8 @@ COPY package*.json ./
 RUN npm install
 
 # Copy source code
-COPY . .
+COPY src/ ./src/
+COPY public/ ./public/
 
 # Create data directory
 RUN mkdir -p data

@@ -167,7 +167,7 @@ function updateTimeSlots(selectedDate) {
     timeSelect.innerHTML = '<option value="">Loading available times...</option>';
     
     // Fetch available slots for selected date
-    fetch(`/api/available-slots/${selectedDate}`)
+    fetch(`/api/appointments/available-slots/${selectedDate}`)
         .then(response => response.json())
         .then(data => {
             if (data.error) {
@@ -241,9 +241,15 @@ function showAvailabilitySummary(data) {
     }
 }
 
-// Enhanced form submission with better error handling
+// Enhanced form submission with duplicate prevention
 document.getElementById("scheduleForm").addEventListener("submit", async function(e) {
     e.preventDefault();
+    
+    // Disable form to prevent multiple submissions
+    const submitBtn = this.querySelector('button[type="submit"]');
+    const originalBtnText = submitBtn.innerHTML;
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<span class="btn-text">Booking...</span>';
     
     const firstName = document.getElementById("firstName").value;
     const familyName = document.getElementById("familyName").value;
@@ -268,10 +274,14 @@ document.getElementById("scheduleForm").addEventListener("submit", async functio
 
     if (!isValid) {
         alert('Please fix the validation errors before submitting.');
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalBtnText;
         return;
     }
 
     try {
+        console.log('📨 Sending appointment data:', { firstName, familyName, phone, date, time });
+        
         const response = await fetch('/api/appointments', {
             method: 'POST',
             headers: {
@@ -286,10 +296,13 @@ document.getElementById("scheduleForm").addEventListener("submit", async functio
             })
         });
 
+        console.log('📩 Response status:', response.status);
+        
         const result = await response.json();
+        console.log('📦 API Response data:', result);
 
-        if (response.ok) {
-            // Show success message
+        if (response.ok && result.success) {
+            // SUCCESS - Show confirmation message
             const confirmationMessage = document.getElementById("confirmationMessage");
             confirmationMessage.style.display = 'block';
             confirmationMessage.innerHTML = `
@@ -302,7 +315,7 @@ document.getElementById("scheduleForm").addEventListener("submit", async functio
             // Hide form
             this.style.display = 'none';
             
-            // Reset form and reload availability
+            // Reset form after delay
             setTimeout(() => {
                 this.reset();
                 this.style.display = 'block';
@@ -316,18 +329,33 @@ document.getElementById("scheduleForm").addEventListener("submit", async functio
                 // Reset min date
                 const today = new Date().toISOString().split('T')[0];
                 document.getElementById('date').min = today;
+                
+                // Re-enable button
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalBtnText;
             }, 5000);
+            
         } else {
-            // Show server-side validation errors
-            if (result.details) {
+            // Handle specific error cases
+            if (result.code === 'SQLITE_CONSTRAINT' || result.error?.includes('already booked')) {
+                alert('This time slot was just booked. Please choose a different time.');
+            } else if (result.details) {
                 alert(`Validation errors:\n• ${result.details.join('\n• ')}`);
             } else {
-                alert(`Booking failed: ${result.error}`);
+                alert(`Booking failed: ${result.error || 'Unknown error'}`);
             }
+            
+            // Re-enable form on error
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalBtnText;
         }
     } catch (error) {
-        console.error('Error:', error);
+        console.error('💥 Network error:', error);
         alert('Sorry, there was an error saving your appointment. Please try again.');
+        
+        // Re-enable form on network error
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalBtnText;
     }
 });
 
@@ -354,56 +382,4 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Clear any existing error messages
     document.querySelectorAll('.error-message').forEach(el => el.textContent = '');
-});
-
-// Appointment Scheduling - Backup version (keeping for reference)
-document.getElementById("scheduleForm").addEventListener("submit", async function(e) {
-    e.preventDefault();
-    
-    const firstName = document.getElementById("firstName").value;
-    const familyName = document.getElementById("familyName").value;
-    const phone = document.getElementById("phone").value;
-    const date = document.getElementById("date").value;
-    const time = document.getElementById("time").value;
-
-    if (firstName && familyName && phone && date && time) {
-        try {
-            const response = await fetch('/api/appointments', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    firstName,
-                    familyName,
-                    phone,
-                    date,
-                    time
-                })
-            });
-
-            if (response.ok) {
-                const result = await response.json();
-                
-                // Show confirmation message
-                const confirmationMessage = document.getElementById("confirmationMessage");
-                confirmationMessage.style.display = 'block';
-                
-                // Hide form
-                this.style.display = 'none';
-                
-                // Reset form for potential new entry
-                setTimeout(() => {
-                    this.reset();
-                    this.style.display = 'block';
-                    confirmationMessage.style.display = 'none';
-                }, 5000);
-            } else {
-                throw new Error('Failed to save appointment');
-            }
-        } catch (error) {
-            console.error('Error:', error);
-            alert('Sorry, there was an error saving your appointment. Please try again.');
-        }
-    }
 });
