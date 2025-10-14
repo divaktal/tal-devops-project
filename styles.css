@@ -1,0 +1,504 @@
+:root {
+    --primary-color: #2c3e50; /* Dark blue for sophistication */
+    --secondary-color: #34495e; /* Slightly lighter blue */
+    --accent-color: #e74c3c; /* Red for contrast */
+    --background-color: #f8f9fa; /* Light gray background */
+    --text-color: #2c3e50; /* Dark text for readability */
+    --chat-shadow: 0px 4px 15px rgba(0, 0, 0, 0.1);
+    --font-primary: 'Great Vibes', cursive; /* Elegant Google Font */
+    --font-secondary: 'Lato', sans-serif; /* Clean sans-serif font */
+}
+
+/* Reset default margin and padding */
+html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    overflow-x: hidden; /* Prevent horizontal scroll */
+}
+
+body {
+    font-family: var(--font-secondary);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background-color: var(--background-color);
+    color: var(--text-color);
+}
+
+/* Title Card - Elegant Design */
+.title-card {
+    width: 100%;
+    text-align: center;
+    padding: 60px 20px;
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    color: white;
+    box-shadow: var(--chat-shadow);
+}
+
+.title-card h1 {
+    font-family: var(--font-primary);
+    font-size: 72px; /* Larger font size for elegance */
+    font-weight: 400; /* Great Vibes is a thin font */
+    margin: 0;
+    letter-spacing: 3px;
+}
+
+.title-card p {
+    font-family: var(--font-secondary);
+    font-size: 20px;
+    margin: 10px 0 0;
+    font-weight: 300;
+    letter-spacing: 1.5px;
+    font-style: italic;
+}
+
+/* Navigation Bar */
+nav {
+    display: flex;
+    justify-content: center;
+    background: var(--primary-color);
+    padding: 15px 0;
+    width: 100%;
+    box-shadow: var(--chat-shadow);
+}
+
+nav a {
+    color: white;
+    text-decoration: none;
+    padding: 14px 20px;
+    font-size: 16px;
+    font-weight: 400;
+    transition: background 0.3s ease;
+}
+
+nav a:hover {
+    background: var(--accent-color);
+    border-radius: 5px;
+}
+
+/* Hero Section */
+.hero {
+    text-align: center;
+    padding: 80px 20px;
+    background-color: white;
+    width: 80%;
+    max-width: 800px;
+    margin-top: 40px;
+    border-radius: 10px;
+    box-shadow: var(--chat-shadow);
+}
+
+.hero h1 {
+    font-family: Arial, sans-serif; /* Restore original font */
+    font-size: 36px;
+    color: var(--text-color);
+    margin: 0;
+}
+
+.hero p {
+    font-size: 18px;
+    color: #666;
+    margin-top: 10px;
+}
+
+/* Services Section */
+.services {
+    text-align: center;
+    padding: 80px 20px;
+    background-color: white;
+    width: 80%;
+    max-width: 800px;
+    margin: 40px auto;
+    border-radius: 10px;
+    box-shadow: var(--chat-shadow);
+}
+
+.services h2 {
+    font-family: var(--font-primary);
+    font-size: 36px;
+    color: var(--text-color);
+    margin: 0;
+}
+
+.services p {
+    font-size: 18px;
+    color: #666;
+    margin-top: 10px;
+}
+
+/* Portfolio Section */
+.portfolio {
+    text-align: center;
+    padding: 80px 20px;
+    background-color: white;
+    width: 80%;
+    max-width: 1200px;
+    margin: 40px auto;
+    border-radius: 10px;
+    box-shadow: var(--chat-shadow);
+}
+
+.portfolio h2 {
+    font-family: var(--font-primary);
+    font-size: 36px;
+    color: var(--text-color);
+    margin: 0;
+}
+
+.gallery {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+    margin-top: 20px;
+}
+
+.gallery-item {
+    position: relative;
+    overflow: hidden;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.gallery-item img {
+    width: 100%;
+    height: 300px;
+    object-fit: cover;
+    border-radius: 10px;
+}
+
+.gallery-item .caption {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgba(44, 62, 80, 0.8);
+    color: white;
+    padding: 10px;
+    font-size: 16px;
+    font-weight: 400;
+    text-align: center;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.gallery-item:hover .caption {
+    opacity: 1;
+}
+
+.gallery-item:hover {
+    transform: scale(1.05);
+    box-shadow: 0px 8px 20px rgba(0, 0, 0, 0.2);
+}
+
+/* Contact Section */
+.contact {
+    text-align: center;
+    padding: 80px 20px;
+    background-color: white;
+    width: 80%;
+    max-width: 800px;
+    margin: 40px auto;
+    border-radius: 10px;
+    box-shadow: var(--chat-shadow);
+}
+
+.contact h2 {
+    font-family: var(--font-primary);
+    font-size: 36px;
+    color: var(--text-color);
+    margin: 0;
+}
+
+.contact p {
+    font-size: 18px;
+    color: #666;
+    margin-top: 10px;
+}
+
+/* Modal for Maximized Photos */
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.modal.open {
+    display: flex;
+    animation: fadeIn 0.3s ease;
+}
+
+.modal-content {
+    position: relative;
+    background: white;
+    border-radius: 10px;
+    padding: 20px;
+    text-align: center;
+    animation: zoomIn 0.3s ease;
+}
+
+.modal-content img {
+    width: 500px;
+    height: 640px;
+    object-fit: cover;
+    border-radius: 10px;
+}
+
+.modal-content .overlay {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(44, 62, 80, 0.8);
+    color: white;
+    padding: 10px 20px;
+    font-size: 18px;
+    font-weight: 400;
+    border-radius: 5px;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes zoomIn {
+    from { transform: scale(0.8); }
+    to { transform: scale(1); }
+}
+
+/* Chat Window */
+.chat-window {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 300px;
+    height: 0; /* Start with height 0 */
+    background: white;
+    border-radius: 10px;
+    box-shadow: var(--chat-shadow);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    transition: height 0.3s ease, opacity 0.3s ease;
+    opacity: 0; /* Start fully transparent */
+}
+
+.chat-window.open {
+    height: 400px; /* Expanded height */
+    opacity: 1; /* Fully visible */
+}
+
+.chat-header {
+    background: var(--primary-color);
+    color: white;
+    padding: 10px;
+    text-align: center;
+    font-size: 16px;
+    font-weight: bold;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.chat-header button {
+    background: var(--accent-color);
+    border: none;
+    color: white;
+    padding: 5px 10px;
+    font-size: 14px;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: background 0.3s ease;
+}
+
+.chat-header button:hover {
+    background: #c0392b;
+}
+
+.chat-body {
+    flex: 1;
+    padding: 10px;
+    background: #f9f9f9;
+    overflow-y: auto;
+}
+
+.chat-footer {
+    padding: 10px;
+    background: #eee;
+    display: flex;
+    justify-content: space-evenly;
+}
+
+.chat-footer button {
+    margin-left: 5px;
+    padding: 5px 10px;
+    background: var(--primary-color);
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background 0.3s ease;
+}
+
+.chat-footer button:hover {
+    background: var(--secondary-color);
+}
+
+.chat-toggle {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: var(--accent-color);
+    color: white;
+    border: none;
+    padding: 15px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 18px;
+    box-shadow: var(--chat-shadow);
+    transition: transform 0.3s ease;
+}
+
+.chat-toggle:hover {
+    transform: scale(1.1);
+}
+
+.typing-animation {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    background-color: var(--primary-color);
+    border-radius: 50%;
+    animation: typing 1.5s infinite;
+}
+
+@keyframes typing {
+    0%, 100% {
+        opacity: 0;
+    }
+    50% {
+        opacity: 1;
+    }
+}
+
+/* Mobile Styles */
+@media (max-width: 768px) {
+    .title-card h1 {
+        font-size: 48px; /* Smaller font size for mobile */
+    }
+
+    .title-card p {
+        font-size: 16px;
+    }
+
+    .hero h1 {
+        font-size: 28px; /* Smaller font size for mobile */
+    }
+
+    .hero p {
+        font-size: 16px;
+    }
+
+    .gallery {
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); /* Adjust gallery layout for mobile */
+    }
+
+    .gallery-item img {
+        height: 200px; /* Smaller image height for mobile */
+    }
+
+    .modal-content img {
+        width: 90%; /* Make modal images responsive */
+        height: auto;
+        max-height: 80vh;
+    }
+
+    .chat-window {
+        width: 90%; /* Make chat window responsive */
+        right: 5%;
+    }
+
+    .chat-toggle {
+        right: 5%; /* Adjust chat toggle position */
+    }
+    nav {
+        flex-direction: column; /* Stack navigation links vertically */
+        padding: 10px 0;
+    }
+
+    nav a {
+        padding: 10px;
+        font-size: 14px;
+    }
+        .hero, .services, .portfolio, .contact {
+            padding: 40px 20px; /* Reduce padding for mobile */
+        }
+/* Scheduling Section */
+.scheduling {
+    text-align: center;
+    padding: 80px 20px;
+    background-color: white;
+    width: 80%;
+    max-width: 800px;
+    margin: 40px auto;
+    border-radius: 10px;
+    box-shadow: var(--chat-shadow);
+}
+
+.scheduling form {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    margin-top: 20px;
+    align-items: center;
+}
+
+.scheduling label {
+    font-weight: bold;
+}
+
+.scheduling input {
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+
+.scheduling button {
+    padding: 10px 20px;
+    background: var(--primary-color);
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background 0.3s ease;
+}
+
+.scheduling button:hover {
+    background: var(--secondary-color);
+}
+
+.appointments {
+    margin-top: 30px;
+    text-align: left;
+}
+
+.appointments ul {
+    list-style: none;
+    padding: 0;
+}
+
+.appointments li {
+    padding: 8px;
+    border-bottom: 1px solid #eee;
+}
+}
+
