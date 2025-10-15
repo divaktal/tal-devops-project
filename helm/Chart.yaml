@@ -1,0 +1,6 @@
+apiVersion: v2
+name: lily-designer-studio
+description: A Helm chart for Lily Designer Studio
+type: application
+version: 0.1.0
+appVersion: "1.0.0"

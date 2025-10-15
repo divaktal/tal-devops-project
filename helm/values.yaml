@@ -1,0 +1,31 @@
+replicaCount: 2
+
+image:
+  repository: lily-designer-studio
+  tag: latest
+  pullPolicy: IfNotPresent
+
+service:
+  type: LoadBalancer
+  port: 80
+  targetPort: 3000
+
+resources:
+  requests:
+    memory: "128Mi"
+    cpu: "100m"
+  limits:
+    memory: "256Mi"
+    cpu: "200m"
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 5
+  targetCPUUtilizationPercentage: 80
+
+database:
+  persistence:
+    enabled: true
+    storageClass: ""
+    size: 1Gi
