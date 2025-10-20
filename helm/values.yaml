@@ -10,22 +10,39 @@ service:
   port: 80
   targetPort: 3000
 
-resources:
-  requests:
-    memory: "128Mi"
-    cpu: "100m"
-  limits:
-    memory: "256Mi"
-    cpu: "200m"
+# Database Configuration
+database:
+  enabled: true
+  image: postgres:13
+  database: "lily_studio"    # This will be the database name
+  username: "lily_user"      # This will be the username  
+  password: "lily123"        # Simple password for testing
+  persistence:
+    enabled: true
+    storageClass: ""
+    size: 1Gi
+  service:
+    port: 5432
+  resources:
+    requests:
+      memory: "128Mi"
+      cpu: "100m"
+    limits:
+      memory: "256Mi"
+      cpu: "200m"
+
+# App Configuration
+app:
+  resources:
+    requests:
+      memory: "128Mi"
+      cpu: "100m"
+    limits:
+      memory: "256Mi"
+      cpu: "200m"
 
 autoscaling:
   enabled: false
   minReplicas: 1
   maxReplicas: 5
   targetCPUUtilizationPercentage: 80
-
-database:
-  persistence:
-    enabled: true
-    storageClass: ""
-    size: 1Gi

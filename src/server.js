@@ -21,8 +21,9 @@ app.get('/api/health', (req, res) => {
     const db = req.app.locals.db;
     
     // Test database connection
-    db.get('SELECT 1 as test', (err) => {
+    db.query('SELECT 1 as test', (err) => {
         if (err) {
+            console.error('Health check database error:', err);
             return res.status(500).json({ 
                 status: 'unhealthy', 
                 error: 'Database connection failed',
@@ -49,24 +50,6 @@ async function initializeApp() {
     try {
         const db = await connectDatabase();
         
-        // Create tables
-        db.run(`CREATE TABLE IF NOT EXISTS appointments (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            firstName TEXT NOT NULL,
-            familyName TEXT NOT NULL,
-            phone TEXT NOT NULL,
-            date TEXT NOT NULL,
-            time TEXT NOT NULL,
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            UNIQUE(date, time)
-        )`, (err) => {
-            if (err) {
-                console.error('Error creating table:', err.message);
-            } else {
-                console.log('✅ Appointments table ready');
-            }
-        });
-        
         // Make db available to all routes
         app.locals.db = db;
         
@@ -74,6 +57,7 @@ async function initializeApp() {
         app.listen(PORT, () => {
             console.log(`🚀 Server running on http://localhost:${PORT}`);
             console.log(`📁 Professional structure loaded`);
+            console.log(`✅ Database connected and ready`);
         });
         
     } catch (error) {

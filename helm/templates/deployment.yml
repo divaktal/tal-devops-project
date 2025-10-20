@@ -27,13 +27,19 @@ spec:
               value: "3000"
             - name: NODE_ENV
               value: production
-            - name: DB_PATH
-              value: "/data/appointments.db"
-          volumeMounts:
-            - name: data-storage
-              mountPath: /data
+            # PostgreSQL connection settings
+            - name: DB_HOST
+              value: "{{ .Chart.Name }}-database"
+            - name: DB_PORT
+              value: "5432"
+            - name: DB_NAME
+              value: "{{ .Values.database.database }}"
+            - name: DB_USER
+              value: "{{ .Values.database.username }}"
+            - name: DB_PASSWORD
+              value: "{{ .Values.database.password }}"
           resources:
-            {{- toYaml .Values.resources | nindent 12 }}
+            {{- toYaml .Values.app.resources | nindent 12 }}
           livenessProbe:
             httpGet:
               path: /api/health
@@ -46,11 +52,3 @@ spec:
               port: 3000
             initialDelaySeconds: 5
             periodSeconds: 5
-      volumes:
-        - name: data-storage
-          {{- if .Values.database.persistence.enabled }}
-          persistentVolumeClaim:
-            claimName: {{ .Chart.Name }}-pvc
-          {{- else }}
-          emptyDir: {}
-          {{- end }}

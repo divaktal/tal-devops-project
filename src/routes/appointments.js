@@ -3,7 +3,7 @@ const router = express.Router();
 const validation = require('../middleware/validation');
 
 // Create new appointment with validation
-router.post('/', (req, res) => {
+router.post('/', async (req, res) => {
     const db = req.app.locals.db;
     const validationResult = validation.validateAppointment(req.body);
     
@@ -17,20 +17,14 @@ router.post('/', (req, res) => {
 
     const { firstName, familyName, phone, date, time } = validationResult.sanitizedData;
 
-    // Check if time slot is already booked
-    const checkSQL = `SELECT id FROM appointments WHERE date = ? AND time = ?`;
-    
-    db.get(checkSQL, [date, time], (err, row) => {
-        if (err) {
-            console.error('Database error:', err);
-            return res.status(500).json({ 
-                success: false,
-                error: 'Database error',
-                code: err.code
-            });
-        }
+    try {
+        // Check if time slot is already booked
+        const checkSQL = `SELECT id FROM appointments WHERE date = $1 AND time = $2`;
+        const checkResult = await db.query(checkSQL, [date, time]);
         
-        if (row) {
+        console.log('🔍 Slot check:', { date, time, existing: checkResult.rows.length });
+        
+        if (checkResult.rows.length > 0) {
             return res.status(409).json({ 
                 success: false,
                 error: 'This time slot is already booked. Please choose a different time.' 
@@ -39,68 +33,65 @@ router.post('/', (req, res) => {
         
         // Book the appointment
         const insertSQL = `INSERT INTO appointments (firstName, familyName, phone, date, time) 
-                         VALUES (?, ?, ?, ?, ?)`;
+                         VALUES ($1, $2, $3, $4, $5) RETURNING id`;
+        const insertResult = await db.query(insertSQL, [firstName, familyName, phone, date, time]);
         
-        db.run(insertSQL, [firstName, familyName, phone, date, time], function(err) {
-            if (err) {
-                console.error('Database error:', err);
-                
-                // Provide more specific error information
-                if (err.code === 'SQLITE_CONSTRAINT') {
-                    return res.status(409).json({ 
-                        success: false,
-                        error: 'This time slot was just booked by another user. Please choose a different time.',
-                        code: err.code
-                    });
-                }
-                
-                return res.status(500).json({ 
-                    success: false,
-                    error: 'Failed to save appointment',
-                    code: err.code
-                });
+        // SUCCESS RESPONSE
+        res.json({
+            success: true,
+            message: 'Appointment saved successfully!',
+            id: insertResult.rows[0].id,
+            appointment: {
+                firstName,
+                familyName,
+                phone,
+                date,
+                time
             }
-            
-            // SUCCESS RESPONSE
-            res.json({
-                success: true,
-                message: 'Appointment saved successfully!',
-                id: this.lastID,
-                appointment: {
-                    firstName,
-                    familyName,
-                    phone,
-                    date,
-                    time
-                }
-            });
         });
-    });
-});
-
-// Get all appointments
-router.get('/', (req, res) => {
-    const db = req.app.locals.db;
-    const sql = `SELECT * FROM appointments ORDER BY date, time`;
-    
-    db.all(sql, [], (err, rows) => {
-        if (err) {
-            console.error('Database error:', err);
-            return res.status(500).json({ 
+        
+    } catch (err) {
+        console.error('Database error:', err);
+        
+        // Provide more specific error information
+        if (err.code === '23505') { // PostgreSQL unique violation
+            return res.status(409).json({ 
                 success: false,
-                error: 'Failed to fetch appointments' 
+                error: 'This time slot was just booked by another user. Please choose a different time.',
+                code: err.code
             });
         }
         
+        return res.status(500).json({ 
+            success: false,
+            error: 'Failed to save appointment',
+            code: err.code
+        });
+    }
+});
+
+// Get all appointments
+router.get('/', async (req, res) => {
+    const db = req.app.locals.db;
+    const sql = `SELECT * FROM appointments ORDER BY date, time`;
+    
+    try {
+        const result = await db.query(sql);
         res.json({
             success: true,
-            appointments: rows
+            appointments: result.rows
         });
-    });
+    } catch (err) {
+        console.error('Database error:', err);
+        return res.status(500).json({ 
+            success: false,
+            error: 'Failed to fetch appointments' 
+        });
+    }
 });
 
 // Get available time slots for a specific date
-router.get('/available-slots/:date', (req, res) => {
+router.get('/available-slots/:date', async (req, res) => {
     const db = req.app.locals.db;
     const date = req.params.date;
     
@@ -113,18 +104,19 @@ router.get('/available-slots/:date', (req, res) => {
     
     const allSlots = ['09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00'];
     
-    const sql = `SELECT time FROM appointments WHERE date = ?`;
-    
-    db.all(sql, [date], (err, rows) => {
-        if (err) {
-            console.error('Database error:', err);
-            return res.status(500).json({ 
-                success: false,
-                error: 'Failed to fetch booked slots' 
-            });
-        }
+    try {
+        const sql = `SELECT time FROM appointments WHERE date = $1`;
+        const result = await db.query(sql, [date]);
         
-        const bookedSlots = rows.map(row => row.time);
+        const bookedSlots = result.rows.map(row => {
+            // Convert PostgreSQL time to HH:MM format
+            const time = row.time;
+            if (typeof time === 'string') {
+                return time.substring(0, 5); // Extract HH:MM from HH:MM:SS
+            }
+            return time;
+        });
+        
         const availableSlots = allSlots.filter(slot => !bookedSlots.includes(slot));
         
         res.json({
@@ -134,7 +126,35 @@ router.get('/available-slots/:date', (req, res) => {
             bookedSlots: bookedSlots,
             allSlots: allSlots
         });
-    });
+    } catch (err) {
+        console.error('Database error:', err);
+        return res.status(500).json({ 
+            success: false,
+            error: 'Failed to fetch booked slots' 
+        });
+    }
+});
+
+// Delete appointment (for testing)
+router.delete('/:id', async (req, res) => {
+    const db = req.app.locals.db;
+    const id = req.params.id;
+    
+    try {
+        const sql = `DELETE FROM appointments WHERE id = $1`;
+        await db.query(sql, [id]);
+        
+        res.json({
+            success: true,
+            message: 'Appointment deleted successfully!'
+        });
+    } catch (err) {
+        console.error('Database error:', err);
+        return res.status(500).json({ 
+            success: false,
+            error: 'Failed to delete appointment' 
+        });
+    }
 });
 
 module.exports = router;
