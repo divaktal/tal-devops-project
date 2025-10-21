@@ -5,8 +5,6 @@ metadata:
   name: {{ .Chart.Name }}-database
   labels:
     app: {{ .Chart.Name }}-database
-    chart: {{ .Chart.Name }}-{{ .Chart.Version }}
-    release: {{ .Release.Name }}
 spec:
   replicas: 1
   selector:

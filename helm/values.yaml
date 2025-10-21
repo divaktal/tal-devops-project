@@ -14,9 +14,9 @@ service:
 database:
   enabled: true
   image: postgres:13
-  database: "lily_studio"    # This will be the database name
-  username: "lily_user"      # This will be the username  
-  password: "lily123"        # Simple password for testing
+  database: "lily_studio"    
+  username: "lily_user"       
+  password: "lily123"       
   persistence:
     enabled: true
     storageClass: ""

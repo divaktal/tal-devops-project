@@ -1,0 +1,26 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: lily-designer-studio
+  namespace: argocd
+spec:
+  project: default
+  
+  # Source: Your Helm chart location
+  source:
+    repoURL: https://github.com/divaktal/tal-devops-project.git
+    targetRevision: HEAD
+    path: helm
+  
+  # Destination: Where to deploy
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: default
+  
+  # Sync policy - automatic deployment
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+    - CreateNamespace=true
