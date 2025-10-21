@@ -2,7 +2,7 @@ replicaCount: 2
 
 image:
   repository: lily-designer-studio
-  tag: latest
+  tag: v2
   pullPolicy: IfNotPresent
 
 service:
