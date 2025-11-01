@@ -109,10 +109,10 @@ router.get('/available-slots/:date', async (req, res) => {
         const result = await db.query(sql, [date]);
         
         const bookedSlots = result.rows.map(row => {
-            // Convert PostgreSQL time to HH:MM format
+            // Handle PostgreSQL time format (HH:MM:SS or HH:MM)
             const time = row.time;
             if (typeof time === 'string') {
-                return time.substring(0, 5); // Extract HH:MM from HH:MM:SS
+                return time.length > 5 ? time.substring(0, 5) : time; // Extract HH:MM from HH:MM:SS
             }
             return time;
         });

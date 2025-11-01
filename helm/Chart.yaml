@@ -1,4 +1,4 @@
-apiVersion: v2
+apiVersion: v1
 name: lily-designer-studio
 description: A Helm chart for Lily Designer Studio
 type: application

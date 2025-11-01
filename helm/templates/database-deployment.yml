@@ -29,7 +29,7 @@ spec:
               value: "{{ .Values.database.password }}"
           volumeMounts:
             - name: postgres-data
-              mountPath: /var/lib/postgresql/data
+              mountPath: /var/lib/postgresql
           resources:
             {{- toYaml .Values.database.resources | nindent 12 }}
           livenessProbe:

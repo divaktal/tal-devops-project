@@ -26,8 +26,7 @@ spec:
             - name: PORT
               value: "3000"
             - name: NODE_ENV
-              value: production
-            # PostgreSQL connection settings
+              value: "production"  
             - name: DB_HOST
               value: "{{ .Chart.Name }}-database"
             - name: DB_PORT
@@ -37,7 +36,10 @@ spec:
             - name: DB_USER
               value: "{{ .Values.database.username }}"
             - name: DB_PASSWORD
-              value: "{{ .Values.database.password }}"
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Chart.Name }}-database-secret
+                  key: password
           resources:
             {{- toYaml .Values.app.resources | nindent 12 }}
           livenessProbe:

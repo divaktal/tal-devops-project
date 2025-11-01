@@ -1,18 +1,39 @@
 services:
+  postgres:
+    image: postgres:13
+    environment:
+      - POSTGRES_DB=lily_studio
+      - POSTGRES_USER=lily_user
+      - POSTGRES_PASSWORD=lily123
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U lily_user -d lily_studio"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   web:
     build: .
     ports:
       - "3000:3000"
-    volumes:
-      - ./src:/app/src
-      - ./public:/app/public
-      - ./data:/app/data
-      - /app/node_modules
     environment:
       - NODE_ENV=development
-      - DB_PATH=./data/appointments.db
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=lily_studio
+      - DB_USER=lily_user
+      - DB_PASSWORD=lily123
+    depends_on:
+      postgres:
+        condition: service_healthy
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/api/health"]
       interval: 30s
       timeout: 10s
       retries: 3
+
+volumes:
+  postgres_data:

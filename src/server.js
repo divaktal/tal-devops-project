@@ -16,28 +16,31 @@ app.use(express.static(path.join(__dirname, '../public')));
 // Routes
 app.use('/api/appointments', appointmentRoutes);
 
-// Health check endpoint
-app.get('/api/health', (req, res) => {
+// Enhanced health check endpoint
+app.get('/api/health', async (req, res) => {
     const db = req.app.locals.db;
-    
-    // Test database connection
-    db.query('SELECT 1 as test', (err) => {
-        if (err) {
-            console.error('Health check database error:', err);
-            return res.status(500).json({ 
-                status: 'unhealthy', 
-                error: 'Database connection failed',
-                timestamp: new Date().toISOString()
-            });
-        }
+    const healthCheck = {
+        status: 'healthy',
+        timestamp: new Date().toISOString(),
+        service: 'Lily Designer Studio API',
+        version: process.env.npm_package_version || '1.0.0',
+        environment: process.env.NODE_ENV || 'development'
+    };
+
+    try {
+        // Test database connection
+        await db.query('SELECT 1 as test');
+        healthCheck.database = 'connected';
         
-        res.json({ 
-            status: 'healthy', 
-            timestamp: new Date().toISOString(),
-            service: 'Lily Designer Studio API',
-            database: 'connected'
-        });
-    });
+        res.json(healthCheck);
+    } catch (err) {
+        console.error('Health check database error:', err);
+        healthCheck.status = 'unhealthy';
+        healthCheck.database = 'disconnected';
+        healthCheck.error = err.message;
+        
+        res.status(503).json(healthCheck);
+    }
 });
 
 // Serve the main page

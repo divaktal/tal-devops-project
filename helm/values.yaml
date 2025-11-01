@@ -1,8 +1,8 @@
 replicaCount: 2
 
 image:
-  repository: lily-designer-studio
-  tag: v2
+  repository: 448049807140.dkr.ecr.us-east-1.amazonaws.com/lily-designer-studio
+  tag: latest
   pullPolicy: IfNotPresent
 
 service:
@@ -10,36 +10,41 @@ service:
   port: 80
   targetPort: 3000
 
-# Database Configuration
+# Database Configuration - Using Kubernetes Pod
 database:
   enabled: true
   image: postgres:13
-  database: "lily_studio"    
-  username: "lily_user"       
-  password: "lily123"       
+  database: "lily_studio"
+  username: "lily_user"
+  password: "lily123"
   persistence:
     enabled: true
-    storageClass: ""
-    size: 1Gi
+    storageClass: "gp2"
+    size: 5Gi
   service:
     port: 5432
   resources:
     requests:
-      memory: "128Mi"
-      cpu: "100m"
-    limits:
       memory: "256Mi"
       cpu: "200m"
+    limits:
+      memory: "512Mi"
+      cpu: "500m"
 
-# App Configuration
+# App Configuration - FIXED: Remove the .env nested structure
 app:
   resources:
     requests:
-      memory: "128Mi"
-      cpu: "100m"
-    limits:
       memory: "256Mi"
       cpu: "200m"
+    limits:
+      memory: "512Mi"
+      cpu: "500m"
+
+# Environment variables - ADD THIS SECTION
+env:
+  NODE_ENV: "production"
+  PORT: "3000"
 
 autoscaling:
   enabled: false

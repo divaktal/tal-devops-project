@@ -1,20 +1,24 @@
 const { Pool } = require('pg');
 
 const pool = new Pool({
-  host: process.env.DB_HOST || 'lily-designer-studio-database',
+  host: process.env.DB_HOST || 'localhost',
   port: process.env.DB_PORT || 5432,
   database: process.env.DB_NAME || 'lily_studio',
-  user: process.env.DB_USER || 'postgres',
-  password: process.env.DB_PASSWORD || 'password123',
+  user: process.env.DB_USER || 'lily_user',
+  password: process.env.DB_PASSWORD || 'lily123',
   connectionTimeoutMillis: 10000,
   max: 20,
   idleTimeoutMillis: 30000,
 });
 
-// Test connection on startup
+// Add connection error handling
+pool.on('error', (err) => {
+  console.error('Unexpected database error:', err);
+});
+
 async function connectDatabase() {
   try {
-    console.log('🔌 Attempting database connection...');
+    console.log('🔌 Attempting PostgreSQL connection...');
     console.log('Database config:', {
       host: process.env.DB_HOST,
       port: process.env.DB_PORT,
@@ -47,7 +51,7 @@ async function connectDatabase() {
     client.release();
     return pool;
   } catch (error) {
-    console.error('❌ Database connection failed:', error);
+    console.error('❌ PostgreSQL connection failed:', error.message);
     throw error;
   }
 }
