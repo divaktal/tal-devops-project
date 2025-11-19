@@ -1,11 +1,12 @@
 {{- if .Values.database.enabled }}
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
   name: {{ .Chart.Name }}-database
   labels:
     app: {{ .Chart.Name }}-database
 spec:
+  serviceName: {{ .Chart.Name }}-database
   replicas: 1
   selector:
     matchLabels:
@@ -28,8 +29,8 @@ spec:
             - name: POSTGRES_PASSWORD
               value: "{{ .Values.database.password }}"
           volumeMounts:
-            - name: postgres-data
-              mountPath: /var/lib/postgresql
+            - name: data
+              mountPath: /var/lib/postgresql/data
           resources:
             {{- toYaml .Values.database.resources | nindent 12 }}
           livenessProbe:
@@ -42,8 +43,13 @@ spec:
               command: ["pg_isready", "-U", "{{ .Values.database.username }}"]
             initialDelaySeconds: 5
             periodSeconds: 5
-      volumes:
-        - name: postgres-data
-          persistentVolumeClaim:
-            claimName: {{ .Chart.Name }}-database-pvc
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: {{ .Values.database.storage }}
+        storageClassName: {{ .Values.database.storageClass }}
 {{- end }}

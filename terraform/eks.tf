@@ -10,6 +10,7 @@ module "eks" {
   iam_role_use_name_prefix =false
   cluster_endpoint_private_access = true
   cluster_endpoint_public_access  = true
+  enable_irsa = true
 
   eks_managed_node_groups = {
     main = {
@@ -29,12 +30,8 @@ module "eks" {
   }
 }
 
-data "aws_iam_openid_connect_provider" "eks" {
-  url = module.eks.cluster_oidc_issuer_url
-}
-
 resource "aws_iam_role" "ebs_csi_driver" {
-  name = "ebs-csi-driver-role"
+  name = "${var.project_name}-${var.environment}-ebs-csi-driver-role"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -42,7 +39,7 @@ resource "aws_iam_role" "ebs_csi_driver" {
       {
         Effect = "Allow"
         Principal = {
-          Federated = module.eks.cluster_oidc_issuer_url
+          Federated = module.eks.oidc_provider_arn
         }
         Action = "sts:AssumeRoleWithWebIdentity"
         Condition = {
