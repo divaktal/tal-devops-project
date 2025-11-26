@@ -5,6 +5,10 @@ const path = require('path');
 const { connectDatabase } = require('./config/database');
 const appointmentRoutes = require('./routes/appointments');
 
+const client = require('prom-client');
+const collectDefaultMetrics = client.collectDefaultMetrics;
+collectDefaultMetrics();
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -15,6 +19,16 @@ app.use(express.static(path.join(__dirname, '../public')));
 
 // Routes
 app.use('/api/appointments', appointmentRoutes);
+
+// ADD THIS — Prometheus /metrics endpoint
+app.get('/metrics', async (req, res) => {
+    try {
+        res.set('Content-Type', client.register.contentType);
+        res.end(await client.register.metrics());
+    } catch (err) {
+        res.status(500).end(err);
+    }
+});
 
 // Enhanced health check endpoint
 app.get('/api/health', async (req, res) => {

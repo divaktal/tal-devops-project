@@ -28,6 +28,8 @@ spec:
               value: "{{ .Values.database.username }}"
             - name: POSTGRES_PASSWORD
               value: "{{ .Values.database.password }}"
+            - name: PGDATA
+              value: "/var/lib/postgresql/data/pgdata"
           volumeMounts:
             - name: data
               mountPath: /var/lib/postgresql/data

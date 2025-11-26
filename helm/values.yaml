@@ -16,10 +16,8 @@ database:
   database: "lily_studio"
   username: "lily_user"
   password: "lily123"
-  persistence:
-    enabled: true
-    storageClass: "gp2"
-    size: 5Gi
+  storage: "5Gi"
+  storageClass: "gp2" 
   service:
     port: 5432
   resources:
@@ -42,6 +40,11 @@ app:
 env:
   NODE_ENV: "production"
   PORT: "3000"
+  DB_HOST: "lily-designer-studio-database"
+  DB_PORT: "5432"
+  DB_NAME: "lily_studio"
+  DB_USER: "lily_user"
+  DB_PASSWORD: "lily123"
 
 autoscaling:
   enabled: false
