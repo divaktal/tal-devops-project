@@ -20,7 +20,7 @@ app.use(express.static(path.join(__dirname, '../public')));
 // Routes
 app.use('/api/appointments', appointmentRoutes);
 
-// ADD THIS — Prometheus /metrics endpoint
+//Prometheus /metrics endpoint
 app.get('/metrics', async (req, res) => {
     try {
         res.set('Content-Type', client.register.contentType);
@@ -66,22 +66,15 @@ app.get('/', (req, res) => {
 async function initializeApp() {
     try {
         const db = await connectDatabase();
-        
-        // Make db available to all routes
         app.locals.db = db;
-        
-        // Start server only after database is ready
-        app.listen(PORT, () => {
-            console.log(`🚀 Server running on http://localhost:${PORT}`);
-            console.log(`📁 Professional structure loaded`);
-            console.log(`✅ Database connected and ready`);
-        });
-        
+        console.log('✅ Database connected and ready');
     } catch (error) {
-        console.error('💥 Failed to initialize application:', error.message);
-        process.exit(1);
+        console.warn('⚠️ Database connection failed, but starting server anyway for testing');
+        app.locals.db = null;
     }
+    
+    app.listen(PORT, () => {
+        console.log(`🚀 Server running on http://localhost:${PORT}`);
+        console.log(`📁 Professional structure loaded`);
+    });
 }
-
-// Start the application
-initializeApp();

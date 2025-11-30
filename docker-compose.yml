@@ -35,7 +35,6 @@ services:
       timeout: 10s
       retries: 3
 
-  # === ADD MONITORING SERVICES BELOW ===
   prometheus:
     image: prom/prometheus:latest
     container_name: prometheus
@@ -56,7 +55,7 @@ services:
     image: grafana/grafana:latest
     container_name: grafana
     ports:
-      - "3001:3000"  # Changed to 3001 to avoid conflict with your web app
+      - "3001:3000"  
     environment:
       - GF_SECURITY_ADMIN_PASSWORD=admin123
       - GF_USERS_ALLOW_SIGN_UP=false
