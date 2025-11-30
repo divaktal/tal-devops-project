@@ -23,8 +23,10 @@ jobs:
           context: .
           tags: lily-designer-studio:latest
           load: true
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
-      # Start Postgres
+      # Start Postgres with proper initialization
       - name: Start PostgreSQL
         run: |
           docker network create lily-net || true
@@ -33,60 +35,93 @@ jobs:
             -e POSTGRES_DB=lily_studio \
             -e POSTGRES_USER=lily_user \
             -e POSTGRES_PASSWORD=lily123 \
+            -p 5432:5432 \
             postgres:13
 
-          # Wait until Postgres is ready
-          TIMEOUT=30
-          SECONDS=0
-          until docker exec lily-db pg_isready -U lily_user -d lily_studio; do
-            echo "Waiting for Postgres..."
+          # Wait for Postgres to be fully ready with timeout
+          echo "Waiting for PostgreSQL to start..."
+          for i in {1..30}; do
+            if docker exec lily-db pg_isready -U lily_user -d lily_studio; then
+              echo "✅ PostgreSQL is ready and accepting connections"
+              break
+            fi
+            echo "Attempt $i/30: Waiting for PostgreSQL..."
             sleep 2
-            SECONDS=$((SECONDS+2))
-            if [ $SECONDS -ge $TIMEOUT ]; then
-              echo "Postgres did not start in $TIMEOUT seconds"
+            if [ $i -eq 30 ]; then
+              echo "❌ PostgreSQL failed to start in time"
               docker logs lily-db
               exit 1
             fi
           done
-          echo "Postgres is ready"
 
-      # Run app container
+          # Small delay to ensure DB is fully initialized
+          sleep 3
+
+      # Run app container with correct environment variables
       - name: Run Node App
         run: |
+          # Run the app container with all required environment variables
           docker run -d -p 3000:3000 --name test-app --network lily-net \
+            -e NODE_ENV=test \
             -e DB_HOST=lily-db \
             -e DB_PORT=5432 \
             -e DB_NAME=lily_studio \
             -e DB_USER=lily_user \
             -e DB_PASSWORD=lily123 \
+            -e PORT=3000 \
             lily-designer-studio:latest
 
-          # Retry health check
-          SUCCESS=0
-          for i in {1..10}; do
-            if curl -f http://localhost:3000/api/health; then
-              echo "✅ Health check passed"
-              SUCCESS=1
-              break
+          echo "App container started, waiting for initialization..."
+          
+          # Wait for app to start with comprehensive checks
+          for i in {1..40}; do
+            # First, check if container is still running
+            if [ "$(docker inspect -f '{{.State.Running}}' test-app)" != "true" ]; then
+              echo "❌ Container stopped running"
+              echo "---- App logs ----"
+              docker logs test-app
+              exit 1
+            fi
+            
+            # Check if app is listening on port 3000 inside container
+            if docker exec test-app sh -c "nc -z localhost 3000"; then
+              echo "✅ App is listening on port 3000"
+              
+              # Now try the health check
+              if curl -f -s -m 10 http://localhost:3000/api/health > /dev/null 2>&1; then
+                echo "✅ Health check passed on attempt $i"
+                curl -s http://localhost:3000/api/health | jq . || curl -s http://localhost:3000/api/health
+                break
+              else
+                echo "⚠️ App listening but health check failing (attempt $i/40)"
+              fi
             else
-              echo "Waiting for app..."
-              sleep 2
+              echo "⏳ App not yet listening on port 3000 (attempt $i/40)"
+            fi
+            
+            sleep 3
+            
+            # If last attempt, show detailed logs
+            if [ $i -eq 40 ]; then
+              echo "❌ Health check failed after 40 attempts"
+              echo "---- App logs ----"
+              docker logs test-app
+              echo "---- Checking app processes ----"
+              docker exec test-app ps aux || echo "Could not check processes"
+              echo "---- Checking port listening ----"
+              docker exec test-app netstat -tuln || echo "Could not check ports"
+              exit 1
             fi
           done
 
-          if [ $SUCCESS -ne 1 ]; then
-            echo "❌ Health check failed. Dumping logs..."
-            echo "---- App logs ----"
-            docker logs test-app || echo "No logs"
-            echo "---- PostgreSQL logs ----"
-            docker logs lily-db || echo "No logs"
-            docker stop test-app || true
-            docker stop lily-db || true
-            docker network rm lily-net || true
-            exit 1
-          fi
+          echo "✅ All checks passed!"
 
-          # Cleanup
-          docker stop test-app
-          docker stop lily-db
-          docker network rm lily-net
+      # Cleanup
+      - name: Cleanup
+        if: always()
+        run: |
+          docker stop test-app || true
+          docker stop lily-db || true
+          docker rm test-app || true
+          docker rm lily-db || true
+          docker network rm lily-net || true

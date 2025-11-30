@@ -78,3 +78,8 @@ async function initializeApp() {
         console.log(`📁 Professional structure loaded`);
     });
 }
+
+initializeApp().catch(error => {
+    console.error('Failed to start application:', error);
+    process.exit(1);
+});
