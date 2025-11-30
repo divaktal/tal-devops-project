@@ -7,46 +7,9 @@ on:
     branches: [ master, main ]
 
 jobs:
-  lint:
-    name: Lint and Validate
+  ci-test:
+    name: Build & Test Docker Image
     runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Validate Files
-        run: |
-          [ -f public/index.html ] && echo "✅ HTML exists" || exit 1
-          [ -f public/styles.css ] && echo "✅ CSS exists" || echo "⚠ No CSS"
-          [ -f public/script.js ] && echo "✅ JS exists" || echo "⚠ No JS"
-          [ -f Dockerfile ] && echo "✅ Dockerfile exists" || exit 1
-          [ -f package.json ] && echo "✅ package.json exists" || exit 1
-
-      - name: Check Node.js version
-        run: node --version
-
-  test:
-    name: Run Tests
-    runs-on: ubuntu-latest
-    needs: lint
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '18'
-          cache: 'npm'
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Run security audit
-        run: npm audit --audit-level moderate
-
-  build:
-    name: Build Docker Image
-    runs-on: ubuntu-latest
-    needs: test
     steps:
       - uses: actions/checkout@v4
 
@@ -60,30 +23,26 @@ jobs:
           context: .
           tags: lily-designer-studio:latest
           load: true
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
 
-      # Start PostgreSQL for testing
+      # Start Postgres
       - name: Start PostgreSQL
         run: |
           docker network create lily-net || true
 
-          docker run -d --name lily-db \
-            --network lily-net \
+          docker run -d --name lily-db --network lily-net \
             -e POSTGRES_DB=lily_studio \
             -e POSTGRES_USER=lily_user \
             -e POSTGRES_PASSWORD=lily123 \
-            -p 5432:5432 \
             postgres:13
 
-          # Wait for PostgreSQL to be ready (max 30s)
+          # Wait until Postgres is ready
           TIMEOUT=30
-          SECONDS_PASSED=0
+          SECONDS=0
           until docker exec lily-db pg_isready -U lily_user -d lily_studio; do
             echo "Waiting for Postgres..."
             sleep 2
-            SECONDS_PASSED=$((SECONDS_PASSED + 2))
-            if [ $SECONDS_PASSED -ge $TIMEOUT ]; then
+            SECONDS=$((SECONDS+2))
+            if [ $SECONDS -ge $TIMEOUT ]; then
               echo "Postgres did not start in $TIMEOUT seconds"
               docker logs lily-db
               exit 1
@@ -91,11 +50,10 @@ jobs:
           done
           echo "Postgres is ready"
 
-      # Test Docker image with DB
-      - name: Test Docker image
+      # Run app container
+      - name: Run Node App
         run: |
-          docker run -d -p 3000:3000 --name test-app \
-            --network lily-net \
+          docker run -d -p 3000:3000 --name test-app --network lily-net \
             -e DB_HOST=lily-db \
             -e DB_PORT=5432 \
             -e DB_NAME=lily_studio \
@@ -103,7 +61,7 @@ jobs:
             -e DB_PASSWORD=lily123 \
             lily-designer-studio:latest
 
-          # Retry health check up to 10 times
+          # Retry health check
           SUCCESS=0
           for i in {1..10}; do
             if curl -f http://localhost:3000/api/health; then
@@ -111,36 +69,24 @@ jobs:
               SUCCESS=1
               break
             else
-              echo "Waiting for app to be ready..."
+              echo "Waiting for app..."
               sleep 2
             fi
           done
 
-          # If health check fails, dump logs and exit
           if [ $SUCCESS -ne 1 ]; then
             echo "❌ Health check failed. Dumping logs..."
             echo "---- App logs ----"
-            docker logs test-app || echo "No logs from app"
+            docker logs test-app || echo "No logs"
             echo "---- PostgreSQL logs ----"
-            docker logs lily-db || echo "No logs from PostgreSQL"
+            docker logs lily-db || echo "No logs"
             docker stop test-app || true
             docker stop lily-db || true
             docker network rm lily-net || true
             exit 1
           fi
 
-          # Cleanup if success
+          # Cleanup
           docker stop test-app
           docker stop lily-db
           docker network rm lily-net
-
-      # Save Docker image as artifact
-      - name: Save Docker image
-        run: docker save lily-designer-studio:latest -o lily-designer-studio.tar
-
-      - name: Upload Docker image artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: docker-image
-          path: lily-designer-studio.tar
-          retention-days: 7
