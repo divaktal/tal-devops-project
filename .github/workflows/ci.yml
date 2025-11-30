@@ -50,6 +50,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # Build Docker image
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
@@ -62,10 +63,11 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      # 🚀 Start PostgreSQL for testing
+      # Start PostgreSQL for testing
       - name: Start PostgreSQL
         run: |
-          docker network create lily-net
+          docker network create lily-net || true
+
           docker run -d --name lily-db \
             --network lily-net \
             -e POSTGRES_DB=lily_studio \
@@ -74,7 +76,22 @@ jobs:
             -p 5432:5432 \
             postgres:13
 
-      # 🚀 Test Docker image with DB variables
+          # Wait for PostgreSQL to be ready (max 30s)
+          TIMEOUT=30
+          SECONDS_PASSED=0
+          until docker exec lily-db pg_isready -U lily_user -d lily_studio; do
+            echo "Waiting for Postgres..."
+            sleep 2
+            SECONDS_PASSED=$((SECONDS_PASSED + 2))
+            if [ $SECONDS_PASSED -ge $TIMEOUT ]; then
+              echo "Postgres did not start in $TIMEOUT seconds"
+              docker logs lily-db
+              exit 1
+            fi
+          done
+          echo "Postgres is ready"
+
+      # Test Docker image with DB
       - name: Test Docker image
         run: |
           docker run -d -p 3000:3000 --name test-app \
@@ -86,15 +103,18 @@ jobs:
             -e DB_PASSWORD=lily123 \
             lily-designer-studio:latest
 
-          # Wait a bit until server boots
-          sleep 15
-          
-          # Check health endpoint
+          # Give the app a few seconds to boot
+          sleep 10
+
+          # Test health endpoint
           curl -f http://localhost:3000/api/health || (docker logs test-app && exit 1)
 
+          # Cleanup
           docker stop test-app
           docker stop lily-db
+          docker network rm lily-net
 
+      # Save Docker image as artifact
       - name: Save Docker image
         run: docker save lily-designer-studio:latest -o lily-designer-studio.tar
 
