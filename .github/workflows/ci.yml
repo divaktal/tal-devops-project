@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Validate Files
         run: |
           [ -f public/index.html ] && echo "✅ HTML exists" || exit 1
@@ -30,16 +30,16 @@ jobs:
     needs: lint
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '18'
           cache: 'npm'
-      
+
       - name: Install dependencies
         run: npm ci
-      
+
       - name: Run security audit
         run: npm audit --audit-level moderate
 
@@ -94,7 +94,6 @@ jobs:
       # Test Docker image with DB
       - name: Test Docker image
         run: |
-          # Run the app container
           docker run -d -p 3000:3000 --name test-app \
             --network lily-net \
             -e DB_HOST=lily-db \
@@ -104,7 +103,7 @@ jobs:
             -e DB_PASSWORD=lily123 \
             lily-designer-studio:latest
 
-          # Wait for the app to boot (retry health check)
+          # Retry health check up to 10 times
           SUCCESS=0
           for i in {1..10}; do
             if curl -f http://localhost:3000/api/health; then
@@ -117,14 +116,13 @@ jobs:
             fi
           done
 
-          # If health check failed, dump logs and fail
+          # If health check fails, dump logs and exit
           if [ $SUCCESS -ne 1 ]; then
             echo "❌ Health check failed. Dumping logs..."
             echo "---- App logs ----"
             docker logs test-app || echo "No logs from app"
             echo "---- PostgreSQL logs ----"
             docker logs lily-db || echo "No logs from PostgreSQL"
-            # Stop containers to clean up
             docker stop test-app || true
             docker stop lily-db || true
             docker network rm lily-net || true
