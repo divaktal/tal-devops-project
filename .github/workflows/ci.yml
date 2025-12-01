@@ -45,7 +45,6 @@ jobs:
     name: Build, Push to ECR and Update Helm
     runs-on: ubuntu-latest
     needs: build
-    # Only push to ECR on master branch pushes (not PRs)
     if: github.event_name == 'push' && github.ref == 'refs/heads/master'
     
     steps:
@@ -56,7 +55,7 @@ jobs:
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_REGION || 'us-east-1' }}
+          aws-region: ${{ secrets.AWS_REGION }}
 
       - name: Login to Amazon ECR
         id: login-ecr
@@ -68,24 +67,14 @@ jobs:
           REPOSITORY: lily-designer-studio
           IMAGE_TAG: ${{ github.sha }}
         run: |
-          # Build the Docker image
           docker build -t $REGISTRY/$REPOSITORY:$IMAGE_TAG .
-          
-          # Tag with latest
           docker tag $REGISTRY/$REPOSITORY:$IMAGE_TAG $REGISTRY/$REPOSITORY:latest
           
-          # Push both tags
-          echo "Pushing $REGISTRY/$REPOSITORY:$IMAGE_TAG"
           docker push $REGISTRY/$REPOSITORY:$IMAGE_TAG
           docker push $REGISTRY/$REPOSITORY:latest
           
-          # Keep local tag for testing
-          docker tag $REGISTRY/$REPOSITORY:$IMAGE_TAG my-app:latest
-          
-          # Output the image URI for reference
           echo "image_uri=$REGISTRY/$REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
       
-      # Test the Docker image with PostgreSQL
       - name: Start PostgreSQL
         run: |
           docker network create app-net || true
@@ -96,19 +85,11 @@ jobs:
             -p 5432:5432 \
             postgres:13
           
-          # Wait for PostgreSQL
-          for i in {1..20}; do
-            if docker exec test-db pg_isready -U test_user; then
-              echo "✅ PostgreSQL ready"
-              break
-            fi
-            echo "Waiting for PostgreSQL... ($i/20)"
-            sleep 2
-          done
+          echo "Waiting for PostgreSQL..."
+          sleep 10
 
       - name: Test Docker container
         run: |
-          # Run the app container
           docker run -d --name test-app --network app-net \
             -e DB_HOST=test-db \
             -e DB_PORT=5432 \
@@ -119,15 +100,12 @@ jobs:
             -p 3000:3000 \
             my-app:latest
           
-          # Wait for app to start with timeout
           echo "Waiting for app to start..."
           timeout 60 bash -c 'until curl -f http://localhost:3000/api/health > /dev/null 2>&1; do sleep 2; done' || echo "Health check timeout"
           
-          # Test endpoints
           curl -f http://localhost:3000/ && echo "✅ Root endpoint OK" || echo "❌ Root endpoint failed"
           curl -f http://localhost:3000/metrics && echo "✅ Metrics endpoint OK" || echo "❌ Metrics endpoint failed"
           
-          # Final health check
           if curl -f http://localhost:3000/api/health; then
             echo "✅ All tests passed"
           else
@@ -143,26 +121,19 @@ jobs:
         run: |
           echo "Updating Helm chart with new image tag: ${{ github.sha }}"
           
-          # Clone the repository with Helm charts
           git clone $REPO_URL helm-repo
           cd helm-repo
           
-          # Update the image tag in values.yaml
           sed -i "s|tag:.*|tag: \"${{ github.sha }}\"|" helm/values.yaml
           
-          # Verify the change
           echo "Updated values.yaml:"
           grep "tag:" helm/values.yaml
           
-          # Configure git
           git config user.name "GitHub Actions"
           git config user.email "actions@github.com"
           
-          # Commit and push
           git add helm/values.yaml
           git commit -m "CI: Update image tag to ${{ github.sha }}"
-          
-          # Push using GitHub token
           git push https://x-access-token:$GITHUB_TOKEN@github.com/divaktal/tal-devops-project.git HEAD:master
           
           echo "✅ Helm chart updated successfully"
@@ -173,30 +144,24 @@ jobs:
           ARGOCD_SERVER: ${{ secrets.ARGOCD_SERVER }}
           ARGOCD_TOKEN: ${{ secrets.ARGOCD_TOKEN }}
         run: |
-          # Only run if you have ArgoCD token configured
           if [ -n "$ARGOCD_TOKEN" ] && [ -n "$ARGOCD_SERVER" ]; then
-            echo "🚀 Triggering ArgoCD sync for application: lily-designer-studio"
+            echo "🚀 Triggering ArgoCD sync"
             
-            # Trigger sync
             curl -s -X POST \
               "$ARGOCD_SERVER/api/v1/applications/lily-designer-studio/sync" \
               -H "Authorization: Bearer $ARGOCD_TOKEN" \
               -H "Content-Type: application/json" \
-              -d '{"prune": true, "dryRun": false, "strategy": {"hook": {"force": false}}}'
+              -d '{"prune": true, "dryRun": false}'
             
-            echo "✅ ArgoCD sync triggered successfully"
-            
-            # Wait a moment and check sync status
-            sleep 5
             echo "📊 Checking ArgoCD sync status..."
+            sleep 5
+            
             curl -s \
               "$ARGOCD_SERVER/api/v1/applications/lily-designer-studio" \
-              -H "Authorization: Bearer $ARGOCD_TOKEN" | \
-              jq -r '.status.sync.status, .status.health.status' || true
+              -H "Authorization: Bearer $ARGOCD_TOKEN" | jq -r '.status.sync.status, .status.health.status' || true
             
           else
-            echo "⚠️ ArgoCD sync not configured (missing ARGOCD_SERVER or ARGOCD_TOKEN secret)"
-            echo "ℹ️ ArgoCD will auto-sync within its configured sync window"
+            echo "⚠️ ArgoCD sync not configured"
           fi
 
       - name: Cleanup
