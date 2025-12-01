@@ -12,14 +12,13 @@ COPY package*.json ./
 RUN npm install --only=production
 
 # Copy source code
-COPY src/ ./src/
-COPY public/ ./public/
+COPY . .
 
 # Create non-root user for security
 RUN addgroup -g 1001 -S nodejs
-RUN adduser -S nextjs -u 1001
-RUN chown -R nextjs:nodejs /app
-USER nextjs
+RUN adduser -S nodejs -u 1001  # FIXED: Changed "nextjs" to "nodejs"
+RUN chown -R nodejs:nodejs /app  # FIXED: Match user/group names
+USER nodejs
 
 EXPOSE 3000
 

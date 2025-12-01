@@ -1,5 +1,8 @@
 name: CI/CD Pipeline
 
+permissions:
+  contents: write
+
 on:
   push:
     branches: [ master ]
@@ -38,7 +41,7 @@ jobs:
           path: dist/
 
   docker:
-    name: Build, Push to ECR and Test
+    name: Build, Push to ECR and Update Helm
     runs-on: ubuntu-latest
     needs: build
     # Only push to ECR on master branch pushes (not PRs)
@@ -61,7 +64,7 @@ jobs:
       - name: Build, tag, and push image to Amazon ECR
         env:
           REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          REPOSITORY: lily-designer-studio  # ← MUST match your ECR repo name
+          REPOSITORY: lily-designer-studio
           IMAGE_TAG: ${{ github.sha }}
         run: |
           # Build the Docker image
@@ -130,6 +133,69 @@ jobs:
             echo "❌ Health check failed"
             docker logs test-app
             exit 1
+          fi
+
+            - name: Update Helm chart with new image tag
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO_URL: https://github.com/divaktal/tal-devops-project.git
+        run: |
+          echo "Updating Helm chart with new image tag: ${{ github.sha }}"
+          
+          # Clone the repository with Helm charts
+          git clone $REPO_URL helm-repo
+          cd helm-repo
+          
+          # Update the image tag in values.yaml
+          sed -i "s|tag:.*|tag: \"${{ github.sha }}\"|" helm/values.yaml
+          
+          # Verify the change
+          echo "Updated values.yaml:"
+          grep "tag:" helm/values.yaml
+          
+          # Configure git
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          
+          # Commit and push
+          git add helm/values.yaml
+          git commit -m "CI: Update image tag to ${{ github.sha }}"
+          
+          # Push using GitHub token
+          git push https://x-access-token:$GITHUB_TOKEN@github.com/divaktal/tal-devops-project.git HEAD:master
+          
+          echo "✅ Helm chart updated successfully"
+
+      - name: Trigger ArgoCD Sync
+        if: success()  
+        env:
+          ARGOCD_SERVER: ${{ secrets.ARGOCD_SERVER }}
+          ARGOCD_TOKEN: ${{ secrets.ARGOCD_TOKEN }}
+        run: |
+          # Only run if you have ArgoCD token configured
+          if [ -n "$ARGOCD_TOKEN" ] && [ -n "$ARGOCD_SERVER" ]; then
+            echo "🚀 Triggering ArgoCD sync for application: lily-designer-studio"
+            
+            # Trigger sync
+            curl -s -X POST \
+              "$ARGOCD_SERVER/api/v1/applications/lily-designer-studio/sync" \
+              -H "Authorization: Bearer $ARGOCD_TOKEN" \
+              -H "Content-Type: application/json" \
+              -d '{"prune": true, "dryRun": false, "strategy": {"hook": {"force": false}}}'
+            
+            echo "✅ ArgoCD sync triggered successfully"
+            
+            # Wait a moment and check sync status
+            sleep 5
+            echo "📊 Checking ArgoCD sync status..."
+            curl -s \
+              "$ARGOCD_SERVER/api/v1/applications/lily-designer-studio" \
+              -H "Authorization: Bearer $ARGOCD_TOKEN" | \
+              jq -r '.status.sync.status, .status.health.status' || true
+            
+          else
+            echo "⚠️ ArgoCD sync not configured (missing ARGOCD_SERVER or ARGOCD_TOKEN secret)"
+            echo "ℹ️ ArgoCD will auto-sync within its configured sync window"
           fi
 
       - name: Cleanup
