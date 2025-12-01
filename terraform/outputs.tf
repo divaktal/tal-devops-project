@@ -13,11 +13,6 @@ output "cluster_name" {
   value       = module.eks.cluster_name
 }
 
-output "ecr_repository_url" {
-  description = "ECR repository URL for your app"
-  value       = aws_ecr_repository.lily_studio.repository_url
-}
-
 output "vpc_id" {
   description = "VPC ID"
   value       = module.vpc.vpc_id
