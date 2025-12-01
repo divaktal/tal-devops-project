@@ -45,18 +45,6 @@ data "aws_availability_zones" "available" {
 
 data "aws_caller_identity" "current" {}
 
-# ECR Repository for your app
-resource "aws_ecr_repository" "lily_studio" {
+data "aws_ecr_repository" "lily_studio" {
   name = "lily-designer-studio"
-  image_tag_mutability = "MUTABLE"
-  force_delete         = true 
-
-  image_scanning_configuration {
-    scan_on_push = true
-  }
-
-  tags = {
-    Environment = var.environment
-    Project     = var.project_name
-  }
 }

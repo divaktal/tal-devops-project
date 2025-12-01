@@ -1,4 +1,4 @@
-name: CI Pipeline
+name: CI/CD Pipeline
 
 on:
   push:
@@ -38,24 +38,49 @@ jobs:
           path: dist/
 
   docker:
-    name: Build Docker Image
+    name: Build, Push to ECR and Test
     runs-on: ubuntu-latest
     needs: build
+    # Only push to ECR on master branch pushes (not PRs)
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    
     steps:
       - uses: actions/checkout@v4
       
-      - name: Build Docker image
-        run: docker build -t my-app .
-        
-      - name: Save Docker image as tar
-        run: docker save my-app -o my-app.tar
-        
-      - name: Upload Docker image artifact
-        uses: actions/upload-artifact@v4
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
         with:
-          name: docker-image
-          path: my-app.tar
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION || 'us-east-1' }}
 
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+      
+      - name: Build, tag, and push image to Amazon ECR
+        env:
+          REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          REPOSITORY: lily-designer-studio  # ← MUST match your ECR repo name
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          # Build the Docker image
+          docker build -t $REGISTRY/$REPOSITORY:$IMAGE_TAG .
+          
+          # Tag with latest
+          docker tag $REGISTRY/$REPOSITORY:$IMAGE_TAG $REGISTRY/$REPOSITORY:latest
+          
+          # Push both tags
+          echo "Pushing $REGISTRY/$REPOSITORY:$IMAGE_TAG"
+          docker push $REGISTRY/$REPOSITORY:$IMAGE_TAG
+          docker push $REGISTRY/$REPOSITORY:latest
+          
+          # Keep local tag for testing
+          docker tag $REGISTRY/$REPOSITORY:$IMAGE_TAG my-app:latest
+          
+          # Output the image URI for reference
+          echo "image_uri=$REGISTRY/$REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
+      
       # Test the Docker image with PostgreSQL
       - name: Start PostgreSQL
         run: |
@@ -90,20 +115,22 @@ jobs:
             -p 3000:3000 \
             my-app:latest
           
-          # Wait for app to start
+          # Wait for app to start with timeout
           echo "Waiting for app to start..."
-          for i in {1..30}; do
-            if curl -f http://localhost:3000/api/health > /dev/null 2>&1; then
-              echo "✅ Health check passed"
-              break
-            fi
-            echo "Attempt $i/30: Waiting for app..."
-            sleep 3
-          done
+          timeout 60 bash -c 'until curl -f http://localhost:3000/api/health > /dev/null 2>&1; do sleep 2; done' || echo "Health check timeout"
           
           # Test endpoints
-          curl -f http://localhost:3000/ || echo "Root endpoint check"
-          curl -f http://localhost:3000/metrics || echo "Metrics endpoint check"
+          curl -f http://localhost:3000/ && echo "✅ Root endpoint OK" || echo "❌ Root endpoint failed"
+          curl -f http://localhost:3000/metrics && echo "✅ Metrics endpoint OK" || echo "❌ Metrics endpoint failed"
+          
+          # Final health check
+          if curl -f http://localhost:3000/api/health; then
+            echo "✅ All tests passed"
+          else
+            echo "❌ Health check failed"
+            docker logs test-app
+            exit 1
+          fi
 
       - name: Cleanup
         if: always()
