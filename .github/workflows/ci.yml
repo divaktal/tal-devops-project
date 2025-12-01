@@ -34,6 +34,7 @@ jobs:
           mkdir -p dist
           cp -r public/* dist/ 2>/dev/null || true
           ls -la dist/
+      
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
@@ -135,7 +136,7 @@ jobs:
             exit 1
           fi
 
-            - name: Update Helm chart with new image tag
+      - name: Update Helm chart with new image tag
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           REPO_URL: https://github.com/divaktal/tal-devops-project.git
@@ -167,7 +168,7 @@ jobs:
           echo "✅ Helm chart updated successfully"
 
       - name: Trigger ArgoCD Sync
-        if: success()  
+        if: success()
         env:
           ARGOCD_SERVER: ${{ secrets.ARGOCD_SERVER }}
           ARGOCD_TOKEN: ${{ secrets.ARGOCD_TOKEN }}
