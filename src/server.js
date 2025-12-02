@@ -1,9 +1,11 @@
+require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
 const path = require('path');
 const { connectDatabase } = require('./config/database');
 const appointmentRoutes = require('./routes/appointments');
+const adminRoutes = require('./routes/admin');
 
 const client = require('prom-client');
 const collectDefaultMetrics = client.collectDefaultMetrics;
@@ -16,11 +18,13 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(bodyParser.json());
 app.use(express.static(path.join(__dirname, '../public')));
+app.use('/admin', express.static(path.join(__dirname, '../admin')));
 
 // Routes
 app.use('/api/appointments', appointmentRoutes);
+app.use('/api/admin', adminRoutes);
 
-//Prometheus /metrics endpoint
+// Prometheus /metrics endpoint
 app.get('/metrics', async (req, res) => {
     try {
         res.set('Content-Type', client.register.contentType);
@@ -30,7 +34,12 @@ app.get('/metrics', async (req, res) => {
     }
 });
 
-// Enhanced health check endpoint
+// Serve admin page
+app.get('/admin*', (req, res) => {
+    res.sendFile(path.join(__dirname, '../admin/index.html'));
+});
+
+// Health check endpoint
 app.get('/api/health', async (req, res) => {
     const db = req.app.locals.db;
     const healthCheck = {
@@ -75,6 +84,8 @@ async function initializeApp() {
     
     app.listen(PORT, () => {
         console.log(`🚀 Server running on http://localhost:${PORT}`);
+        console.log(`👑 Admin panel (NO LOGIN): http://localhost:${PORT}/admin`);
+        console.log(`📊 Health check: http://localhost:${PORT}/api/health`);
         console.log(`📁 Professional structure loaded`);
     });
 }

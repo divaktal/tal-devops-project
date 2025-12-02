@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lily Studio - Admin Panel</title>
+    <link rel="stylesheet" href="/admin/styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .loading-spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #3498db;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .fa-spin {
+            animation: spin 1s linear infinite;
+        }
+        
+        /* Block Form Styles */
+        .form-container {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+            margin-bottom: 30px;
+        }
+        
+        .form-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 20px;
+        }
+        
+        .time-range-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .checkbox-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+        }
+        
+        .block-type-selector {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .block-type-btn {
+            padding: 10px 20px;
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            background: white;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .block-type-btn.active {
+            border-color: #3498db;
+            background: #e3f2fd;
+            color: #3498db;
+        }
+        
+        .recurring-options {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+            display: none;
+        }
+        
+        .days-selector {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin: 15px 0;
+        }
+        
+        .day-checkbox {
+            display: none;
+        }
+        
+        .day-label {
+            padding: 8px 15px;
+            border: 2px solid #dee2e6;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .day-checkbox:checked + .day-label {
+            border-color: #3498db;
+            background: #3498db;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="admin-container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <h2><i class="fas fa-crown"></i> Lily Admin</h2>
+                <p>Open Access</p>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="#" class="nav-item active" data-page="dashboard">
+                    <i class="fas fa-tachometer-alt"></i> Dashboard
+                </a>
+                <a href="#" class="nav-item" data-page="photos">
+                    <i class="fas fa-images"></i> Photo Manager
+                </a>
+                <a href="#" class="nav-item" data-page="appointments">
+                    <i class="fas fa-calendar-alt"></i> Appointments
+                </a>
+                <a href="#" class="nav-item" data-page="upload">
+                    <i class="fas fa-upload"></i> Upload Photos
+                </a>
+                <a href="#" class="nav-item" data-page="blockedSlots">
+                    <i class="fas fa-ban"></i> Blocked Slots
+                </a>
+                <a href="#" class="nav-item" data-page="backup">
+                    <i class="fas fa-database"></i> Backup
+                </a>
+            </nav>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <div class="topbar">
+                <div class="topbar-left">
+                    <h1 id="pageTitle">Dashboard</h1>
+                </div>
+                <div class="topbar-right">
+                    <span class="server-status">
+                        <i class="fas fa-circle" style="color: #4CAF50;"></i>
+                        <span>Server Online</span>
+                    </span>
+                </div>
+            </div>
+
+            <!-- Dashboard Page -->
+            <div class="page" id="dashboardPage">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background: #e3f2fd;">
+                            <i class="fas fa-calendar-day" style="color: #2196f3;"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3 id="todayAppointments">0</h3>
+                            <p>Appointments Today</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background: #f3e5f5;">
+                            <i class="fas fa-calendar-alt" style="color: #9c27b0;"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3 id="totalAppointments">0</h3>
+                            <p>Total Appointments</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background: #e8f5e9;">
+                            <i class="fas fa-images" style="color: #4caf50;"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3 id="totalPhotos">0</h3>
+                            <p>Total Photos</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background: #fff3e0;">
+                            <i class="fas fa-ban" style="color: #ff9800;"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3 id="totalBlocked">0</h3>
+                            <p>Blocked Slots</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="recent-section">
+                    <h2>Recent Appointments</h2>
+                    <div class="table-container">
+                        <table id="recentAppointments">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Phone</th>
+                                    <th>Date</th>
+                                    <th>Time</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Will be populated -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <div class="recent-section" style="margin-top: 30px;">
+                    <h2>Recent Blocked Slots</h2>
+                    <div class="table-container">
+                        <table id="recentBlockedSlots">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Time</th>
+                                    <th>Reason</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Will be populated -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Photos Page -->
+            <div class="page" id="photosPage" style="display: none;">
+                <div class="page-header">
+                    <h2>Photo Gallery Manager</h2>
+                    <div class="page-actions">
+                        <select id="photoCategoryFilter">
+                            <option value="">All Categories</option>
+                            <option value="portfolio">Portfolio</option>
+                            <option value="wedding">Wedding</option>
+                            <option value="evening">Evening Wear</option>
+                            <option value="casual">Casual</option>
+                        </select>
+                        <button class="btn-primary" onclick="admin.showUploadPage()">
+                            <i class="fas fa-plus"></i> Add Photo
+                        </button>
+                    </div>
+                </div>
+                <div class="photos-grid" id="photosGrid">
+                    <div class="loading-spinner"></div>
+                </div>
+            </div>
+
+            <!-- Appointments Page -->
+            <div class="page" id="appointmentsPage" style="display: none;">
+                <div class="page-header">
+                    <h2>Appointment Management</h2>
+                    <div class="page-actions">
+                        <input type="date" id="appointmentDateFilter" onchange="admin.loadAppointments()">
+                        <button class="btn-secondary" onclick="admin.exportAppointments()">
+                            <i class="fas fa-file-export"></i> Export CSV
+                        </button>
+                    </div>
+                </div>
+                <div class="table-container">
+                    <table id="appointmentsTable">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Client Name</th>
+                                <th>Phone</th>
+                                <th>Date</th>
+                                <th>Time</th>
+                                <th>Booked On</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Will be populated -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Upload Page -->
+            <div class="page" id="uploadPage" style="display: none;">
+                <div class="upload-container">
+                    <h2>Upload New Photos</h2>
+                    <form id="uploadForm">
+                        <div class="upload-area" id="dropArea">
+                            <i class="fas fa-cloud-upload-alt"></i>
+                            <p>Drag & drop photos here or click to browse</p>
+                            <input type="file" id="fileInput" multiple accept="image/*" style="display: none;">
+                            <button type="button" class="btn-browse" onclick="document.getElementById('fileInput').click()">
+                                Browse Files
+                            </button>
+                        </div>
+                        <div class="form-group">
+                            <label for="photoCaption">Caption (optional)</label>
+                            <input type="text" id="photoCaption" placeholder="Enter photo caption">
+                        </div>
+                        <div class="form-group">
+                            <label for="photoCategory">Category</label>
+                            <select id="photoCategory">
+                                <option value="portfolio">Portfolio</option>
+                                <option value="wedding">Wedding</option>
+                                <option value="evening">Evening Wear</option>
+                                <option value="casual">Casual</option>
+                            </select>
+                        </div>
+                        <div class="upload-preview" id="uploadPreview"></div>
+                        <button type="submit" class="btn-primary" id="uploadBtn">
+                            <i class="fas fa-upload"></i> Upload Photos
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Blocked Slots Page -->
+            <div class="page" id="blockedSlotsPage" style="display: none;">
+                <div class="page-header">
+                    <h2>Blocked Time Slots Management</h2>
+                    <div class="page-actions">
+                        <button class="btn-primary" onclick="admin.showBlockForm()">
+                            <i class="fas fa-plus"></i> Add Block
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Block Creation Form -->
+                <div class="form-container" id="blockFormContainer" style="display: none;">
+                    <h3>Block Time Slot</h3>
+                    <form id="addBlockForm">
+                        <div class="block-type-selector">
+                            <button type="button" class="block-type-btn active" data-type="single">
+                                Single Day
+                            </button>
+                            <button type="button" class="block-type-btn" data-type="range">
+                                Date Range
+                            </button>
+                            <button type="button" class="block-type-btn" data-type="weekly">
+                                Weekly Recurring
+                            </button>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="blockDate">Date *</label>
+                                <input type="date" id="blockDate" required>
+                            </div>
+                            <div class="form-group">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="allDayBlock"> All Day
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div class="form-row" id="timeBlockFields">
+                            <div class="form-group">
+                                <label>Time Range</label>
+                                <div class="time-range-group">
+                                    <input type="time" id="blockStartTime" value="09:00">
+                                    <span>to</span>
+                                    <input type="time" id="blockEndTime" value="17:00">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="form-row" id="rangeFields" style="display: none;">
+                            <div class="form-group">
+                                <label for="endDate">End Date</label>
+                                <input type="date" id="endDate">
+                            </div>
+                        </div>
+                        
+                        <div class="recurring-options" id="weeklyFields">
+                            <h4>Weekly Recurring</h4>
+                            <div class="days-selector">
+                                <input type="checkbox" id="day0" class="day-checkbox" value="0">
+                                <label for="day0" class="day-label">Sun</label>
+                                
+                                <input type="checkbox" id="day1" class="day-checkbox" value="1">
+                                <label for="day1" class="day-label">Mon</label>
+                                
+                                <input type="checkbox" id="day2" class="day-checkbox" value="2">
+                                <label for="day2" class="day-label">Tue</label>
+                                
+                                <input type="checkbox" id="day3" class="day-checkbox" value="3">
+                                <label for="day3" class="day-label">Wed</label>
+                                
+                                <input type="checkbox" id="day4" class="day-checkbox" value="4">
+                                <label for="day4" class="day-label">Thu</label>
+                                
+                                <input type="checkbox" id="day5" class="day-checkbox" value="5">
+                                <label for="day5" class="day-label">Fri</label>
+                                
+                                <input type="checkbox" id="day6" class="day-checkbox" value="6">
+                                <label for="day6" class="day-label">Sat</label>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="weeksCount">Repeat for (weeks):</label>
+                                <input type="number" id="weeksCount" min="1" max="52" value="4">
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="blockReason">Reason (optional)</label>
+                            <input type="text" id="blockReason" placeholder="e.g., Holiday, Maintenance, Personal">
+                        </div>
+                        
+                        <div class="form-actions">
+                            <button type="button" class="btn-secondary" onclick="admin.hideBlockForm()">
+                                Cancel
+                            </button>
+                            <button type="submit" class="btn-primary">
+                                <i class="fas fa-ban"></i> Block Selected Time(s)
+                            </button>
+                        </div>
+                    </form>
+                </div>
+                
+                <!-- Current Blocked Slots -->
+                <div class="table-container">
+                    <table id="blockedSlotsTable">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Time</th>
+                                <th>Reason</th>
+                                <th>Type</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Will be populated -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Backup Page -->
+            <div class="page" id="backupPage" style="display: none;">
+                <div class="backup-container">
+                    <h2>Database Management</h2>
+                    <div class="backup-actions">
+                        <div class="backup-card" onclick="admin.backupDatabase()">
+                            <i class="fas fa-download"></i>
+                            <h3>Download Backup</h3>
+                            <p>Download complete database backup as JSON</p>
+                        </div>
+                        <div class="backup-card" onclick="admin.exportAppointmentsCSV()">
+                            <i class="fas fa-file-csv"></i>
+                            <h3>Export Appointments</h3>
+                            <p>Export all appointments as CSV file</p>
+                        </div>
+                    </div>
+                    <div class="database-info">
+                        <h3>Database Information</h3>
+                        <div class="info-grid">
+                            <div class="info-item">
+                                <span class="info-label">Total Appointments:</span>
+                                <span class="info-value" id="dbAppointments">0</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">Total Photos:</span>
+                                <span class="info-value" id="dbPhotos">0</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">Total Blocked Slots:</span>
+                                <span class="info-value" id="dbBlocked">0</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">Last Backup:</span>
+                                <span class="info-value" id="lastBackup">Never</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Photo Modal -->
+    <div class="modal" id="photoModal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Edit Photo</h3>
+                <button class="modal-close" onclick="admin.closeModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="editPhotoForm">
+                    <input type="hidden" id="editPhotoId">
+                    <div class="form-group">
+                        <label for="editCaption">Caption</label>
+                        <input type="text" id="editCaption">
+                    </div>
+                    <div class="form-group">
+                        <label for="editCategory">Category</label>
+                        <select id="editCategory">
+                            <option value="portfolio">Portfolio</option>
+                            <option value="wedding">Wedding</option>
+                            <option value="evening">Evening Wear</option>
+                            <option value="casual">Casual</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="editDisplayOrder">Display Order</label>
+                        <input type="number" id="editDisplayOrder" min="0" value="0">
+                    </div>
+                    <div class="form-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="editIsActive" checked>
+                            <span>Active (show on website)</span>
+                        </label>
+                    </div>
+                    <div class="modal-actions">
+                        <button type="button" class="btn-secondary" onclick="admin.closeModal()">Cancel</button>
+                        <button type="submit" class="btn-primary">Save Changes</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="/admin/admin.js"></script>
+</body>
+</html>

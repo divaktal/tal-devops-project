@@ -166,8 +166,8 @@ function updateTimeSlots(selectedDate) {
     // Show loading
     timeSelect.innerHTML = '<option value="">Loading available times...</option>';
     
-    // Fetch available slots for selected date
-    fetch(`/api/appointments/available-slots/${selectedDate}`)
+    // Fetch available slots (now includes blocked slots check)
+    fetch(`/api/admin/available-slots/${selectedDate}`)
         .then(response => response.json())
         .then(data => {
             if (data.error) {
@@ -180,12 +180,20 @@ function updateTimeSlots(selectedDate) {
             
             data.allSlots.forEach(slot => {
                 const isAvailable = data.availableSlots.includes(slot);
+                const isBooked = data.bookedSlots.includes(slot);
                 const displayTime = formatTimeDisplay(slot);
                 
                 if (isAvailable) {
                     options += `<option value="${slot}">${displayTime} - Available</option>`;
-                } else {
+                } else if (isBooked) {
                     options += `<option value="${slot}" disabled>${displayTime} - Booked</option>`;
+                } else {
+                    // Blocked slot
+                    const blockReason = data.blockedInfo.find(b => 
+                        b.time.includes(slot) || b.time === 'All day'
+                    );
+                    const reason = blockReason ? ` - ${blockReason.reason}` : '';
+                    options += `<option value="${slot}" disabled style="color: #dc3545;">${displayTime} - Blocked${reason}</option>`;
                 }
             });
             
@@ -382,4 +390,80 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Clear any existing error messages
     document.querySelectorAll('.error-message').forEach(el => el.textContent = '');
+});
+
+async function loadPortfolioPhotos() {
+    try {
+        const gallery = document.getElementById('portfolioGallery');
+        if (!gallery) return;
+        
+        // Show loading state
+        gallery.innerHTML = `
+            <div class="loading-placeholder">
+                <div class="loading-spinner"></div>
+                <p>Loading portfolio...</p>
+            </div>
+        `;
+        
+        // Fetch photos from database via public API
+        const response = await fetch('/api/admin/public/photos?category=portfolio&active=true');
+        
+        if (!response.ok) {
+            throw new Error('Failed to load photos');
+        }
+        
+        const data = await response.json();
+        
+        if (data.success && data.photos && data.photos.length > 0) {
+            gallery.innerHTML = '';
+            
+            data.photos.forEach(photo => {
+                const galleryItem = document.createElement('div');
+                galleryItem.className = 'gallery-item';
+                galleryItem.onclick = () => openModal(photo.filepath, photo.caption || 'Design');
+                
+                galleryItem.innerHTML = `
+                    <img src="${photo.filepath}" alt="${photo.caption || 'Design'}" loading="lazy">
+                    <div class="caption">${photo.caption || 'Beautiful Design'}</div>
+                `;
+                
+                gallery.appendChild(galleryItem);
+            });
+        } else {
+            // Fallback to hardcoded photos if no database photos
+            loadFallbackPhotos();
+        }
+    } catch (error) {
+        console.error('Failed to load portfolio photos:', error);
+        // Load fallback photos on error
+        loadFallbackPhotos();
+    }
+}
+
+// Fallback to hardcoded photos
+function loadFallbackPhotos() {
+    const gallery = document.getElementById('portfolioGallery');
+    gallery.innerHTML = `
+        <div class="gallery-item" onclick="openModal('photos/image1.jpg', 'Elegant Evening Gown')">
+            <img src="photos/image1.jpg" alt="Elegant Evening Gown">
+            <div class="caption">Elegant Evening Gown - Perfect for formal events.</div>
+        </div>
+        <div class="gallery-item" onclick="openModal('photos/image2.jpg', 'Summer Dress')">
+            <img src="photos/image2.jpg" alt="Summer Dress">
+            <div class="caption">Summer Dress - Light and breezy for sunny days.</div>
+        </div>
+        <div class="gallery-item" onclick="openModal('photos/image3.jpg', 'Bridal Gown')">
+            <img src="photos/image3.jpg" alt="Bridal Gown">
+            <div class="caption">Bridal Gown - A dream dress for your special day.</div>
+        </div>
+        <div class="gallery-item" onclick="openModal('photos/image4.jpg', 'Casual Wear')">
+            <img src="photos/image4.jpg" alt="Casual Wear">
+            <div class="caption">Casual Wear - Comfortable yet stylish for everyday wear.</div>
+        </div>
+    `;
+}
+
+// Load photos when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    loadPortfolioPhotos();
 });

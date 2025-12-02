@@ -48,6 +48,23 @@ async function connectDatabase() {
     `);
     
     console.log('✅ Appointments table ready');
+    
+    await client.query(`
+    CREATE TABLE IF NOT EXISTS blocked_slots (
+      id SERIAL PRIMARY KEY,
+      date DATE NOT NULL,
+      start_time TIME,
+      end_time TIME,
+      all_day BOOLEAN DEFAULT false,
+      reason VARCHAR(255),
+      block_type VARCHAR(50) DEFAULT 'single',
+      recurring_pattern JSONB,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+`);
+    
+    console.log('✅ Blocked slots table ready');
+    
     client.release();
     return pool;
   } catch (error) {
