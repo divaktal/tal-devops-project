@@ -118,13 +118,16 @@ router.post('/photos', upload.single('photo'), async (req, res) => {
         
         const { caption, category } = req.body;
         
+        // Create correct filepath - use relative path from public folder
+        const filepath = `/uploads/${req.file.filename}`;
+        
         const result = await pool.query(
             `INSERT INTO photos (filename, original_name, filepath, caption, category, is_active) 
              VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
             [
                 req.file.filename,
                 req.file.originalname,
-                `/uploads/${req.file.filename}`,
+                filepath, // Use the correct relative path
                 caption || '',
                 category || 'portfolio',
                 true
@@ -540,6 +543,168 @@ router.get('/available-slots/:date', async (req, res) => {
     } catch (error) {
         console.error('Available slots error:', error);
         res.status(500).json({ error: 'Failed to fetch available slots' });
+    }
+});
+
+// Get appointments timeline for a specific date
+router.get('/appointments/timeline', async (req, res) => {
+    try {
+        const { date } = req.query;
+        
+        if (!date) {
+            return res.status(400).json({ error: 'Date is required' });
+        }
+        
+        // Get appointments for the specific date
+        const appointmentsResult = await pool.query(
+            `SELECT * FROM appointments 
+             WHERE date = $1 
+             ORDER BY time`,
+            [date]
+        );
+        
+        // Get blocked slots for the same date
+        const blockedSlotsResult = await pool.query(
+            `SELECT * FROM blocked_slots 
+             WHERE date = $1 
+             ORDER BY start_time`,
+            [date]
+        );
+        
+        // Generate time slots for the day (9am to 5pm)
+        const timeSlots = [];
+        for (let hour = 9; hour <= 17; hour++) {
+            timeSlots.push({
+                time: `${hour.toString().padStart(2, '0')}:00`,
+                hour: hour,
+                display: `${hour}:00`
+            });
+        }
+        
+        // Format the data for timeline view
+        const timelineData = timeSlots.map(slot => {
+            const appointment = appointmentsResult.rows.find(apt => {
+                const aptTime = apt.time.substring(0, 5); // Get HH:MM
+                return aptTime === slot.time;
+            });
+            
+            const blockedSlot = blockedSlotsResult.rows.find(block => {
+                if (block.all_day) return true;
+                
+                if (block.start_time && block.end_time) {
+                    const blockStart = block.start_time.substring(0, 5);
+                    const blockEnd = block.end_time.substring(0, 5);
+                    return slot.time >= blockStart && slot.time <= blockEnd;
+                }
+                
+                return false;
+            });
+            
+            return {
+                time: slot.time,
+                display: slot.display,
+                appointment: appointment ? {
+                    id: appointment.id,
+                    firstName: appointment.firstname,
+                    familyName: appointment.familyname,
+                    phone: appointment.phone,
+                    time: appointment.time.substring(0, 5)
+                } : null,
+                blocked: blockedSlot ? {
+                    reason: blockedSlot.reason,
+                    allDay: blockedSlot.all_day,
+                    startTime: blockedSlot.start_time,
+                    endTime: blockedSlot.end_time
+                } : null,
+                isAvailable: !appointment && !blockedSlot
+            };
+        });
+        
+        res.json({
+            success: true,
+            date: date,
+            timeline: timelineData,
+            summary: {
+                totalAppointments: appointmentsResult.rows.length,
+                totalBlocked: blockedSlotsResult.rows.length,
+                availableSlots: timelineData.filter(slot => slot.isAvailable).length
+            }
+        });
+    } catch (error) {
+        console.error('Timeline fetch error:', error);
+        res.status(500).json({ error: 'Failed to fetch timeline data' });
+    }
+});
+
+// Get appointments calendar view (monthly)
+router.get('/appointments/calendar', async (req, res) => {
+    try {
+        const { year, month } = req.query;
+        
+        // Default to current month if not specified
+        const currentDate = new Date();
+        const targetYear = parseInt(year) || currentDate.getFullYear();
+        const targetMonth = parseInt(month) || currentDate.getMonth() + 1;
+        
+        // Calculate date range
+        const startDate = `${targetYear}-${targetMonth.toString().padStart(2, '0')}-01`;
+        const endDate = `${targetYear}-${targetMonth.toString().padStart(2, '0')}-31`;
+        
+        // Get appointments for the month
+        const appointmentsResult = await pool.query(
+            `SELECT date, COUNT(*) as count, 
+                    ARRAY_AGG(time ORDER BY time) as times
+             FROM appointments 
+             WHERE date >= $1 AND date <= $2
+             GROUP BY date
+             ORDER BY date`,
+            [startDate, endDate]
+        );
+        
+        // Get blocked days for the month
+        const blockedDaysResult = await pool.query(
+            `SELECT date, COUNT(*) as count
+             FROM blocked_slots 
+             WHERE date >= $1 AND date <= $2
+             GROUP BY date
+             ORDER BY date`,
+            [startDate, endDate]
+        );
+        
+        // Create calendar data
+        const calendarData = [];
+        const daysInMonth = new Date(targetYear, targetMonth, 0).getDate();
+        
+        for (let day = 1; day <= daysInMonth; day++) {
+            const dateStr = `${targetYear}-${targetMonth.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+            const dateObj = new Date(dateStr);
+            const dayOfWeek = dateObj.getDay(); // 0 = Sunday, 6 = Saturday
+            
+            const appointmentsForDay = appointmentsResult.rows.find(a => a.date === dateStr);
+            const blockedForDay = blockedDaysResult.rows.find(b => b.date === dateStr);
+            
+            calendarData.push({
+                date: dateStr,
+                day: day,
+                dayOfWeek: dayOfWeek,
+                isWeekend: dayOfWeek === 0 || dayOfWeek === 6,
+                appointmentCount: appointmentsForDay ? parseInt(appointmentsForDay.count) : 0,
+                appointmentTimes: appointmentsForDay ? appointmentsForDay.times : [],
+                isBlocked: !!blockedForDay,
+                blockedCount: blockedForDay ? parseInt(blockedForDay.count) : 0
+            });
+        }
+        
+        res.json({
+            success: true,
+            year: targetYear,
+            month: targetMonth,
+            monthName: new Date(targetYear, targetMonth - 1, 1).toLocaleString('default', { month: 'long' }),
+            calendar: calendarData
+        });
+    } catch (error) {
+        console.error('Calendar fetch error:', error);
+        res.status(500).json({ error: 'Failed to fetch calendar data' });
     }
 });
 

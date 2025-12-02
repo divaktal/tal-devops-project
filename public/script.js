@@ -1,469 +1,390 @@
-// Smooth scrolling for anchor links
-document.querySelectorAll('nav a').forEach(anchor => {
-    anchor.addEventListener('click', function (e) {
-        e.preventDefault(); // Prevent default anchor behavior
-        const targetId = this.getAttribute('href').substring(1); // Get the target section ID
-        const targetSection = document.getElementById(targetId); // Find the target section
-        if (targetSection) {
-            targetSection.scrollIntoView({
-                behavior: 'smooth', // Smooth scroll
-                block: 'start' // Align to the top of the section
-            });
-        }
-    });
-});
+// ============ APPOINTMENT BOOKING SYSTEM ============
 
-// Toggle Chat Window
-function toggleChat() {
-    var chatWindow = document.getElementById("chatWindow");
-    var chatButton = document.querySelector(".chat-toggle");
-    chatWindow.classList.toggle("open");
-    chatButton.style.display = chatWindow.classList.contains("open") ? "none" : "block";
-    chatWindow.setAttribute("aria-hidden", !chatWindow.classList.contains("open"));
+// Utility function to format date as YYYY-MM-DD
+function formatDate(date) {
+    const d = new Date(date);
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
 }
 
-// Close Chat Window when clicking outside
-document.addEventListener('click', function (e) {
-    var chatWindow = document.getElementById("chatWindow");
-    var chatButton = document.querySelector(".chat-toggle");
-    if (!chatWindow.contains(e.target) && !chatButton.contains(e.target)) {
-        chatWindow.classList.remove("open");
-        chatButton.style.display = "block";
-        chatWindow.setAttribute("aria-hidden", "true");
-    }
-});
-
-// Send Message in Chat
-function sendMessage(message) {
-    var chatBody = document.getElementById("chatBody");
-    var newMessage = document.createElement("div");
-    newMessage.textContent = "You: " + message;
-    chatBody.appendChild(newMessage);
-
-    // Show typing animation for the bot
-    var typingMessage = document.createElement("div");
-    typingMessage.innerHTML = 'Lily_Bot: <span class="typing-animation"></span>';
-    chatBody.appendChild(typingMessage);
-
-    // Simulate a delay for the bot's response
-    setTimeout(function() {
-        // Remove typing animation
-        typingMessage.innerHTML = 'Lily_Bot: Thank you for your message! How can I assist you further?';
-        chatBody.scrollTop = chatBody.scrollHeight;
-    }, 1500);
+// Get today's date in YYYY-MM-DD format
+function getTodayDate() {
+    return formatDate(new Date());
 }
 
-// Open Modal with Maximized Photo
-function openModal(imageSrc, dressName) {
-    var modal = document.getElementById("modal");
-    var modalImage = document.getElementById("modalImage");
-    var modalOverlay = document.getElementById("modalOverlay");
-    modalImage.src = imageSrc;
-    modalOverlay.textContent = dressName;
-    modal.classList.add("open");
+// Get current time in HH:MM format
+function getCurrentTime() {
+    const now = new Date();
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    return `${hours}:${minutes}`;
 }
 
-// Close Modal
-function closeModal() {
-    var modal = document.getElementById("modal");
-    modal.classList.remove("open");
-}
-
-// Client-side validation functions
-const clientValidation = {
-    isValidName: (name) => /^[a-zA-Z\s\-']{2,50}$/.test(name.trim()),
-    isValidPhone: (phone) => /^[\+]?[0-9\s\-\(\)\.]{10,20}$/.test(phone.trim()),
+// Check if a time slot is in the past
+function isTimeInPast(selectedDate, selectedTime) {
+    const today = getTodayDate();
     
-    validateField: (field, value) => {
-        const errorElement = document.getElementById(`${field}Error`);
-        
-        switch (field) {
-            case 'firstName':
-            case 'familyName':
-                if (!value.trim()) {
-                    errorElement.textContent = 'This field is required';
-                    return false;
-                } else if (!clientValidation.isValidName(value)) {
-                    errorElement.textContent = 'Must contain only letters (2-50 characters)';
-                    return false;
-                }
-                break;
-            case 'phone':
-                if (!value.trim()) {
-                    errorElement.textContent = 'Phone number is required';
-                    return false;
-                } else if (!clientValidation.isValidPhone(value)) {
-                    errorElement.textContent = 'Please enter a valid phone number (10-20 digits)';
-                    return false;
-                }
-                break;
-            case 'date':
-                if (!value) {
-                    errorElement.textContent = 'Please select a date';
-                    return false;
-                }
-                const selectedDate = new Date(value);
-                const today = new Date();
-                today.setHours(0, 0, 0, 0);
-                if (selectedDate < today) {
-                    errorElement.textContent = 'Please select a future date';
-                    return false;
-                }
-                break;
-        }
-        
-        errorElement.textContent = '';
+    // If selected date is in the past
+    if (selectedDate < today) {
         return true;
     }
-};
-
-// Add real-time validation
-document.getElementById('firstName').addEventListener('blur', function() {
-    clientValidation.validateField('firstName', this.value);
-});
-
-document.getElementById('familyName').addEventListener('blur', function() {
-    clientValidation.validateField('familyName', this.value);
-});
-
-document.getElementById('phone').addEventListener('blur', function() {
-    clientValidation.validateField('phone', this.value);
-});
-
-document.getElementById('date').addEventListener('change', function() {
-    clientValidation.validateField('date', this.value);
-    // Also update time slots when date changes
-    updateTimeSlots(this.value);
-});
-
-// Update time options based on selected date
-function updateTimeSlots(selectedDate) {
-    const timeSelect = document.getElementById('time');
     
-    if (!selectedDate) {
-        // Reset to default if no date selected
-        timeSelect.innerHTML = `
-            <option value="">Select an hour</option>
-            <option value="09:00">9:00 AM</option>
-            <option value="10:00">10:00 AM</option>
-            <option value="11:00">11:00 AM</option>
-            <option value="12:00">12:00 PM</option>
-            <option value="13:00">1:00 PM</option>
-            <option value="14:00">2:00 PM</option>
-            <option value="15:00">3:00 PM</option>
-            <option value="16:00">4:00 PM</option>
-            <option value="17:00">5:00 PM</option>
-        `;
-        // Clear availability summary
-        const summaryDiv = document.getElementById('availabilitySummary');
-        if (summaryDiv) {
-            summaryDiv.innerHTML = '';
-            summaryDiv.style.backgroundColor = '#f8f9fa';
-        }
-        return;
+    // If selected date is today, check time
+    if (selectedDate === today) {
+        const currentTime = getCurrentTime();
+        return selectedTime <= currentTime;
     }
     
-    // Show loading
-    timeSelect.innerHTML = '<option value="">Loading available times...</option>';
+    return false;
+}
+
+// Initialize booking system
+document.addEventListener('DOMContentLoaded', function() {
+    const dateInput = document.getElementById('appointmentDate');
+    const timeSelect = document.getElementById('appointmentTime');
+    const bookingForm = document.getElementById('bookingForm');
+    const availableTimesDiv = document.getElementById('availableTimes');
+    const loadingDiv = document.getElementById('loading');
+    const errorDiv = document.getElementById('error');
+    const successDiv = document.getElementById('success');
     
-    // Fetch available slots (now includes blocked slots check)
-    fetch(`/api/admin/available-slots/${selectedDate}`)
-        .then(response => response.json())
-        .then(data => {
-            if (data.error) {
-                timeSelect.innerHTML = `<option value="">${data.error}</option>`;
+    // Set minimum date to today
+    if (dateInput) {
+        dateInput.min = getTodayDate();
+        
+        // Disable past dates
+        const today = new Date();
+        const yesterday = new Date(today);
+        yesterday.setDate(yesterday.getDate() - 1);
+        const maxPastDate = formatDate(yesterday);
+        
+        const allDateInputs = document.querySelectorAll('input[type="date"]');
+        allDateInputs.forEach(input => {
+            input.min = getTodayDate();
+        });
+    }
+    
+    // Load available times when date changes
+    if (dateInput && timeSelect) {
+        dateInput.addEventListener('change', function() {
+            const selectedDate = this.value;
+            
+            if (!selectedDate) {
+                timeSelect.innerHTML = '<option value="">Select a date first</option>';
                 return;
             }
             
-            // Build time options
-            let options = '<option value="">Select an hour</option>';
+            // Clear previous options
+            timeSelect.innerHTML = '<option value="">Loading available times...</option>';
+            timeSelect.disabled = true;
             
-            data.allSlots.forEach(slot => {
-                const isAvailable = data.availableSlots.includes(slot);
-                const isBooked = data.bookedSlots.includes(slot);
-                const displayTime = formatTimeDisplay(slot);
-                
-                if (isAvailable) {
-                    options += `<option value="${slot}">${displayTime} - Available</option>`;
-                } else if (isBooked) {
-                    options += `<option value="${slot}" disabled>${displayTime} - Booked</option>`;
-                } else {
-                    // Blocked slot
-                    const blockReason = data.blockedInfo.find(b => 
-                        b.time.includes(slot) || b.time === 'All day'
-                    );
-                    const reason = blockReason ? ` - ${blockReason.reason}` : '';
-                    options += `<option value="${slot}" disabled style="color: #dc3545;">${displayTime} - Blocked${reason}</option>`;
-                }
-            });
+            // Show loading
+            if (loadingDiv) loadingDiv.style.display = 'block';
+            if (errorDiv) errorDiv.style.display = 'none';
             
-            timeSelect.innerHTML = options;
-            
-            // Show availability summary
-            showAvailabilitySummary(data);
-        })
-        .catch(error => {
-            console.error('Error fetching availability:', error);
-            timeSelect.innerHTML = '<option value="">Error loading times</option>';
+            // Fetch available times for selected date
+            fetch(`/api/available-slots/${selectedDate}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (loadingDiv) loadingDiv.style.display = 'none';
+                    
+                    if (data.success) {
+                        // Clear options
+                        timeSelect.innerHTML = '';
+                        
+                        if (data.availableSlots.length === 0) {
+                            timeSelect.innerHTML = '<option value="">No available times</option>';
+                            if (availableTimesDiv) {
+                                availableTimesDiv.innerHTML = `
+                                    <div class="error-message">
+                                        <i class="fas fa-calendar-times"></i>
+                                        <p>No available time slots for ${selectedDate}. Please select another date.</p>
+                                    </div>
+                                `;
+                            }
+                        } else {
+                            // Filter out past times if date is today
+                            const currentTime = getCurrentTime();
+                            const isToday = selectedDate === getTodayDate();
+                            
+                            const validSlots = data.availableSlots.filter(slot => {
+                                if (!isToday) return true;
+                                return slot > currentTime;
+                            });
+                            
+                            if (validSlots.length === 0) {
+                                timeSelect.innerHTML = '<option value="">No more available times today</option>';
+                                if (availableTimesDiv) {
+                                    availableTimesDiv.innerHTML = `
+                                        <div class="error-message">
+                                            <i class="fas fa-clock"></i>
+                                            <p>No more available time slots for today. Please select another date.</p>
+                                        </div>
+                                    `;
+                                }
+                            } else {
+                                // Add options for valid slots
+                                validSlots.forEach(slot => {
+                                    const option = document.createElement('option');
+                                    option.value = slot;
+                                    option.textContent = slot;
+                                    timeSelect.appendChild(option);
+                                });
+                                
+                                timeSelect.disabled = false;
+                                
+                                // Display blocked slots info
+                                if (availableTimesDiv && data.blockedInfo && data.blockedInfo.length > 0) {
+                                    let blockedInfoHTML = '<div class="blocked-info"><h4>Note:</h4><ul>';
+                                    data.blockedInfo.forEach(info => {
+                                        blockedInfoHTML += `<li>${info.time}: ${info.reason}</li>`;
+                                    });
+                                    blockedInfoHTML += '</ul></div>';
+                                    availableTimesDiv.innerHTML = blockedInfoHTML;
+                                } else if (availableTimesDiv) {
+                                    availableTimesDiv.innerHTML = '';
+                                }
+                            }
+                        }
+                    } else {
+                        timeSelect.innerHTML = '<option value="">Error loading times</option>';
+                        if (errorDiv) {
+                            errorDiv.style.display = 'block';
+                            errorDiv.innerHTML = `<p>Error: ${data.error || 'Failed to load available times'}</p>`;
+                        }
+                    }
+                })
+                .catch(error => {
+                    if (loadingDiv) loadingDiv.style.display = 'none';
+                    timeSelect.innerHTML = '<option value="">Error loading times</option>';
+                    if (errorDiv) {
+                        errorDiv.style.display = 'block';
+                        errorDiv.innerHTML = '<p>Network error. Please try again.</p>';
+                    }
+                    console.error('Error fetching available times:', error);
+                });
         });
-}
-
-// Format time for display (9:00 -> 9:00 AM)
-function formatTimeDisplay(time) {
-    const [hours, minutes] = time.split(':');
-    const hour = parseInt(hours);
-    const ampm = hour >= 12 ? 'PM' : 'AM';
-    const displayHour = hour % 12 || 12;
-    return `${displayHour}:${minutes} ${ampm}`;
-}
-
-// Show availability summary
-function showAvailabilitySummary(data) {
-    let summaryDiv = document.getElementById('availabilitySummary');
-    
-    if (!summaryDiv) {
-        summaryDiv = document.createElement('div');
-        summaryDiv.id = 'availabilitySummary';
-        summaryDiv.style.marginTop = '10px';
-        summaryDiv.style.padding = '10px';
-        summaryDiv.style.borderRadius = '5px';
-        summaryDiv.style.backgroundColor = '#f8f9fa';
-        
-        const timeSelect = document.getElementById('time');
-        timeSelect.parentNode.appendChild(summaryDiv);
     }
     
-    if (data.error) {
-        summaryDiv.innerHTML = `<span style="color: #dc3545;">⚠️ ${data.error}</span>`;
-        summaryDiv.style.backgroundColor = '#f8d7da';
-    } else {
-        const availableCount = data.availableSlots.length;
-        const totalCount = data.allSlots.length;
-        
-        summaryDiv.innerHTML = `
-            <strong>Availability for ${data.date}:</strong><br>
-            ✅ ${availableCount} time slots available<br>
-            ❌ ${totalCount - availableCount} time slots booked
-        `;
-        summaryDiv.style.backgroundColor = availableCount > 0 ? '#d1edff' : '#fff3cd';
-    }
-}
-
-// Enhanced form submission with duplicate prevention
-document.getElementById("scheduleForm").addEventListener("submit", async function(e) {
-    e.preventDefault();
-    
-    // Disable form to prevent multiple submissions
-    const submitBtn = this.querySelector('button[type="submit"]');
-    const originalBtnText = submitBtn.innerHTML;
-    submitBtn.disabled = true;
-    submitBtn.innerHTML = '<span class="btn-text">Booking...</span>';
-    
-    const firstName = document.getElementById("firstName").value;
-    const familyName = document.getElementById("familyName").value;
-    const phone = document.getElementById("phone").value;
-    const date = document.getElementById("date").value;
-    const time = document.getElementById("time").value;
-
-    // Clear previous errors
-    document.querySelectorAll('.error-message').forEach(el => el.textContent = '');
-
-    // Client-side validation
-    let isValid = true;
-    isValid = clientValidation.validateField('firstName', firstName) && isValid;
-    isValid = clientValidation.validateField('familyName', familyName) && isValid;
-    isValid = clientValidation.validateField('phone', phone) && isValid;
-    isValid = clientValidation.validateField('date', date) && isValid;
-
-    if (!time) {
-        document.getElementById('timeError').textContent = 'Please select a time';
-        isValid = false;
-    }
-
-    if (!isValid) {
-        alert('Please fix the validation errors before submitting.');
-        submitBtn.disabled = false;
-        submitBtn.innerHTML = originalBtnText;
-        return;
-    }
-
-    try {
-        console.log('📨 Sending appointment data:', { firstName, familyName, phone, date, time });
-        
-        const response = await fetch('/api/appointments', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                firstName,
-                familyName,
-                phone,
-                date,
-                time
-            })
-        });
-
-        console.log('📩 Response status:', response.status);
-        
-        const result = await response.json();
-        console.log('📦 API Response data:', result);
-
-        if (response.ok && result.success) {
-            // SUCCESS - Show confirmation message
-            const confirmationMessage = document.getElementById("confirmationMessage");
-            confirmationMessage.style.display = 'block';
-            confirmationMessage.innerHTML = `
-                <div class="confirmation-icon">✅</div>
-                <h3>Appointment Booked!</h3>
-                <p>Your appointment on ${date} at ${formatTimeDisplay(time)} has been confirmed.</p>
-                <p>We'll contact you at ${phone} to confirm.</p>
-            `;
+    // Form submission
+    if (bookingForm) {
+        bookingForm.addEventListener('submit', function(e) {
+            e.preventDefault();
             
-            // Hide form
-            this.style.display = 'none';
+            const firstName = document.getElementById('firstName').value.trim();
+            const familyName = document.getElementById('familyName').value.trim();
+            const phone = document.getElementById('phone').value.trim();
+            const date = document.getElementById('appointmentDate').value;
+            const time = document.getElementById('appointmentTime').value;
             
-            // Reset form after delay
-            setTimeout(() => {
-                this.reset();
-                this.style.display = 'block';
-                confirmationMessage.style.display = 'none';
-                // Clear availability summary
-                const summaryDiv = document.getElementById('availabilitySummary');
-                if (summaryDiv) {
-                    summaryDiv.innerHTML = '';
-                    summaryDiv.style.backgroundColor = '#f8f9fa';
+            // Validation
+            if (!firstName || !familyName || !phone || !date || !time) {
+                if (errorDiv) {
+                    errorDiv.style.display = 'block';
+                    errorDiv.innerHTML = '<p>Please fill in all required fields.</p>';
                 }
-                // Reset min date
-                const today = new Date().toISOString().split('T')[0];
-                document.getElementById('date').min = today;
-                
-                // Re-enable button
-                submitBtn.disabled = false;
-                submitBtn.innerHTML = originalBtnText;
-            }, 5000);
-            
-        } else {
-            // Handle specific error cases
-            if (result.code === 'SQLITE_CONSTRAINT' || result.error?.includes('already booked')) {
-                alert('This time slot was just booked. Please choose a different time.');
-            } else if (result.details) {
-                alert(`Validation errors:\n• ${result.details.join('\n• ')}`);
-            } else {
-                alert(`Booking failed: ${result.error || 'Unknown error'}`);
+                return;
             }
             
-            // Re-enable form on error
-            submitBtn.disabled = false;
-            submitBtn.innerHTML = originalBtnText;
-        }
-    } catch (error) {
-        console.error('💥 Network error:', error);
-        alert('Sorry, there was an error saving your appointment. Please try again.');
-        
-        // Re-enable form on network error
-        submitBtn.disabled = false;
-        submitBtn.innerHTML = originalBtnText;
+            // Check if time is in the past
+            if (isTimeInPast(date, time)) {
+                if (errorDiv) {
+                    errorDiv.style.display = 'block';
+                    errorDiv.innerHTML = '<p>Cannot book appointments in the past. Please select a future time.</p>';
+                }
+                return;
+            }
+            
+            // Validate phone number (basic validation)
+            const phoneRegex = /^[\d\s\-\+\(\)]{10,}$/;
+            if (!phoneRegex.test(phone.replace(/\s/g, ''))) {
+                if (errorDiv) {
+                    errorDiv.style.display = 'block';
+                    errorDiv.innerHTML = '<p>Please enter a valid phone number.</p>';
+                }
+                return;
+            }
+            
+            // Show loading
+            const submitBtn = bookingForm.querySelector('button[type="submit"]');
+            const originalBtnText = submitBtn.innerHTML;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Booking...';
+            submitBtn.disabled = true;
+            
+            if (errorDiv) errorDiv.style.display = 'none';
+            if (successDiv) successDiv.style.display = 'none';
+            
+            // Prepare data
+            const appointmentData = {
+                firstName: firstName,
+                familyName: familyName,
+                phone: phone,
+                date: date,
+                time: time
+            };
+            
+            // Send booking request
+            fetch('/api/book-appointment', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(appointmentData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Reset button
+                submitBtn.innerHTML = originalBtnText;
+                submitBtn.disabled = false;
+                
+                if (data.success) {
+                    // Show success message
+                    if (successDiv) {
+                        successDiv.style.display = 'block';
+                        successDiv.innerHTML = `
+                            <div class="success-content">
+                                <i class="fas fa-check-circle"></i>
+                                <h3>Appointment Booked Successfully!</h3>
+                                <p>Your appointment has been confirmed for:</p>
+                                <div class="appointment-details">
+                                    <p><strong>Date:</strong> ${new Date(date).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
+                                    <p><strong>Time:</strong> ${time}</p>
+                                    <p><strong>Name:</strong> ${firstName} ${familyName}</p>
+                                    <p><strong>Phone:</strong> ${phone}</p>
+                                </div>
+                                <p class="confirmation-note">You will receive a confirmation call shortly.</p>
+                            </div>
+                        `;
+                    }
+                    
+                    // Reset form
+                    bookingForm.reset();
+                    
+                    // Clear time select
+                    if (timeSelect) {
+                        timeSelect.innerHTML = '<option value="">Select a date first</option>';
+                        timeSelect.disabled = true;
+                    }
+                    
+                    // Clear available times display
+                    if (availableTimesDiv) {
+                        availableTimesDiv.innerHTML = '';
+                    }
+                    
+                    // Scroll to success message
+                    successDiv.scrollIntoView({ behavior: 'smooth' });
+                    
+                } else {
+                    // Show error
+                    if (errorDiv) {
+                        errorDiv.style.display = 'block';
+                        errorDiv.innerHTML = `<p>${data.error || 'Failed to book appointment'}</p>`;
+                    }
+                }
+            })
+            .catch(error => {
+                // Reset button
+                submitBtn.innerHTML = originalBtnText;
+                submitBtn.disabled = false;
+                
+                // Show error
+                if (errorDiv) {
+                    errorDiv.style.display = 'block';
+                    errorDiv.innerHTML = '<p>Network error. Please try again.</p>';
+                }
+                console.error('Error booking appointment:', error);
+            });
+        });
+    }
+    
+    // Phone number formatting
+    const phoneInput = document.getElementById('phone');
+    if (phoneInput) {
+        phoneInput.addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, '');
+            
+            if (value.length > 3 && value.length <= 6) {
+                value = value.replace(/(\d{3})(\d+)/, '$1-$2');
+            } else if (value.length > 6) {
+                value = value.replace(/(\d{3})(\d{3})(\d+)/, '$1-$2-$3');
+            }
+            
+            e.target.value = value;
+        });
     }
 });
 
-// Set minimum date to today for the date picker and initialize
+// ============ PHOTO GALLERY ============
 document.addEventListener('DOMContentLoaded', function() {
-    const dateInput = document.getElementById('date');
-    const today = new Date().toISOString().split('T')[0];
-    dateInput.min = today;
+    const gallery = document.getElementById('photoGallery');
+    const categoryFilter = document.getElementById('categoryFilter');
     
-    // Initialize time dropdown
-    const timeSelect = document.getElementById('time');
-    timeSelect.innerHTML = `
-        <option value="">Select an hour</option>
-        <option value="09:00">9:00 AM</option>
-        <option value="10:00">10:00 AM</option>
-        <option value="11:00">11:00 AM</option>
-        <option value="12:00">12:00 PM</option>
-        <option value="13:00">1:00 PM</option>
-        <option value="14:00">2:00 PM</option>
-        <option value="15:00">3:00 PM</option>
-        <option value="16:00">4:00 PM</option>
-        <option value="17:00">5:00 PM</option>
-    `;
+    if (gallery) {
+        loadPhotos();
+    }
     
-    // Clear any existing error messages
-    document.querySelectorAll('.error-message').forEach(el => el.textContent = '');
-});
-
-async function loadPortfolioPhotos() {
-    try {
-        const gallery = document.getElementById('portfolioGallery');
+    if (categoryFilter) {
+        categoryFilter.addEventListener('change', loadPhotos);
+    }
+    
+    function loadPhotos() {
+        const category = categoryFilter ? categoryFilter.value : '';
+        let url = '/api/admin/public/photos';
+        if (category) {
+            url += `?category=${category}`;
+        }
+        
+        if (gallery) {
+            gallery.innerHTML = '<div class="loading">Loading photos...</div>';
+        }
+        
+        fetch(url)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success && gallery) {
+                    displayPhotos(data.photos);
+                } else {
+                    throw new Error(data.error || 'Failed to load photos');
+                }
+            })
+            .catch(error => {
+                console.error('Error loading photos:', error);
+                if (gallery) {
+                    gallery.innerHTML = '<div class="error">Failed to load photos. Please try again later.</div>';
+                }
+            });
+    }
+    
+    function displayPhotos(photos) {
         if (!gallery) return;
         
-        // Show loading state
-        gallery.innerHTML = `
-            <div class="loading-placeholder">
-                <div class="loading-spinner"></div>
-                <p>Loading portfolio...</p>
-            </div>
-        `;
-        
-        // Fetch photos from database via public API
-        const response = await fetch('/api/admin/public/photos?category=portfolio&active=true');
-        
-        if (!response.ok) {
-            throw new Error('Failed to load photos');
+        if (photos.length === 0) {
+            gallery.innerHTML = '<div class="no-photos">No photos found in this category</div>';
+            return;
         }
         
-        const data = await response.json();
+        gallery.innerHTML = '';
         
-        if (data.success && data.photos && data.photos.length > 0) {
-            gallery.innerHTML = '';
+        photos.forEach(photo => {
+            const photoItem = document.createElement('div');
+            photoItem.className = 'photo-item';
             
-            data.photos.forEach(photo => {
-                const galleryItem = document.createElement('div');
-                galleryItem.className = 'gallery-item';
-                galleryItem.onclick = () => openModal(photo.filepath, photo.caption || 'Design');
-                
-                galleryItem.innerHTML = `
-                    <img src="${photo.filepath}" alt="${photo.caption || 'Design'}" loading="lazy">
-                    <div class="caption">${photo.caption || 'Beautiful Design'}</div>
-                `;
-                
-                gallery.appendChild(galleryItem);
-            });
-        } else {
-            // Fallback to hardcoded photos if no database photos
-            loadFallbackPhotos();
-        }
-    } catch (error) {
-        console.error('Failed to load portfolio photos:', error);
-        // Load fallback photos on error
-        loadFallbackPhotos();
+            // Log the filepath for debugging
+            console.log('Photo filepath:', photo.filepath);
+            
+            photoItem.innerHTML = `
+                <img src="${photo.filepath}" alt="${photo.caption || 'Photo'}" loading="lazy" 
+                     onerror="this.src='https://via.placeholder.com/300x200?text=Image+Not+Found'; this.onerror=null;">
+                ${photo.caption ? `<div class="photo-caption">${photo.caption}</div>` : ''}
+            `;
+            gallery.appendChild(photoItem);
+        });
     }
-}
-
-// Fallback to hardcoded photos
-function loadFallbackPhotos() {
-    const gallery = document.getElementById('portfolioGallery');
-    gallery.innerHTML = `
-        <div class="gallery-item" onclick="openModal('photos/image1.jpg', 'Elegant Evening Gown')">
-            <img src="photos/image1.jpg" alt="Elegant Evening Gown">
-            <div class="caption">Elegant Evening Gown - Perfect for formal events.</div>
-        </div>
-        <div class="gallery-item" onclick="openModal('photos/image2.jpg', 'Summer Dress')">
-            <img src="photos/image2.jpg" alt="Summer Dress">
-            <div class="caption">Summer Dress - Light and breezy for sunny days.</div>
-        </div>
-        <div class="gallery-item" onclick="openModal('photos/image3.jpg', 'Bridal Gown')">
-            <img src="photos/image3.jpg" alt="Bridal Gown">
-            <div class="caption">Bridal Gown - A dream dress for your special day.</div>
-        </div>
-        <div class="gallery-item" onclick="openModal('photos/image4.jpg', 'Casual Wear')">
-            <img src="photos/image4.jpg" alt="Casual Wear">
-            <div class="caption">Casual Wear - Comfortable yet stylish for everyday wear.</div>
-        </div>
-    `;
-}
-
-// Load photos when page loads
-document.addEventListener('DOMContentLoaded', function() {
-    loadPortfolioPhotos();
 });

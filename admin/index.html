@@ -133,6 +133,9 @@
                 <a href="#" class="nav-item" data-page="blockedSlots">
                     <i class="fas fa-ban"></i> Blocked Slots
                 </a>
+                <a href="#" class="nav-item" data-page="schedule">
+                    <i class="fas fa-calendar-day"></i> Schedule View
+                </a>
                 <a href="#" class="nav-item" data-page="backup">
                     <i class="fas fa-database"></i> Backup
                 </a>
@@ -441,6 +444,42 @@
                             <!-- Will be populated -->
                         </tbody>
                     </table>
+                </div>
+            </div>
+
+            <!-- Schedule Page -->
+            <div class="page" id="schedulePage" style="display: none;">
+                <div class="page-header">
+                    <h2>📅 Daily Schedule View</h2>
+                    <div class="page-actions">
+                        <label for="scheduleDate" style="font-weight: 500; margin-right: 10px;">Select Date:</label>
+                        <input type="date" id="scheduleDate" value="" style="padding: 8px 12px; border: 2px solid #e1e5e9; border-radius: 6px;">
+                        <button class="btn-primary" onclick="admin.loadTodaySchedule()" style="padding: 8px 16px;">
+                            <i class="fas fa-calendar-day"></i> Today
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="summary-cards" id="scheduleSummary" style="display: none; margin: 20px 0;">
+                    <div class="card">
+                        <h3>Appointments</h3>
+                        <p id="timelineTotalAppointments">0</p>
+                    </div>
+                    <div class="card">
+                        <h3>Blocked Slots</h3>
+                        <p id="timelineTotalBlocked">0</p>
+                    </div>
+                    <div class="card">
+                        <h3>Available Slots</h3>
+                        <p id="timelineAvailableSlots">0</p>
+                    </div>
+                </div>
+                
+                <div class="timeline-container" id="timelineContainer">
+                    <div style="text-align: center; padding: 40px; color: #666;">
+                        <i class="fas fa-calendar-alt" style="font-size: 48px; margin-bottom: 15px; color: #ccc;"></i>
+                        <p>Select a date to view the schedule</p>
+                    </div>
                 </div>
             </div>
 

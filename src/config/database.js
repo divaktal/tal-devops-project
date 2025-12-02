@@ -62,6 +62,22 @@ async function connectDatabase() {
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
 `);
+
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS photos (
+        id SERIAL PRIMARY KEY,
+        filename VARCHAR(255) NOT NULL,
+        original_name VARCHAR(255),
+        filepath VARCHAR(500) NOT NULL,
+        caption TEXT,
+        category VARCHAR(50) DEFAULT 'portfolio',
+        display_order INTEGER DEFAULT 0,
+        is_active BOOLEAN DEFAULT true,
+        uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+console.log('✅ Photos table ready');
     
     console.log('✅ Blocked slots table ready');
     

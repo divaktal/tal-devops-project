@@ -1,96 +1,89 @@
-require('dotenv').config();
 const express = require('express');
-const cors = require('cors');
-const bodyParser = require('body-parser');
 const path = require('path');
+const cors = require('cors');
 const { connectDatabase } = require('./config/database');
-const appointmentRoutes = require('./routes/appointments');
-const adminRoutes = require('./routes/admin');
+const { setupCleanupCron } = require('./scripts/cleanup-cron');
 
-const client = require('prom-client');
-const collectDefaultMetrics = client.collectDefaultMetrics;
-collectDefaultMetrics();
+// Import routes
+const appointmentsRouter = require('./routes/appointments');
+const adminRouter = require('./routes/admin');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Middleware
 app.use(cors());
-app.use(bodyParser.json());
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// Serve static files from public folder
 app.use(express.static(path.join(__dirname, '../public')));
+
+// Serve admin static files
 app.use('/admin', express.static(path.join(__dirname, '../admin')));
 
-// Routes
-app.use('/api/appointments', appointmentRoutes);
-app.use('/api/admin', adminRoutes);
+// API Routes
+app.use('/api', appointmentsRouter);
+app.use('/api/admin', adminRouter);
 
-// Prometheus /metrics endpoint
-app.get('/metrics', async (req, res) => {
-    try {
-        res.set('Content-Type', client.register.contentType);
-        res.end(await client.register.metrics());
-    } catch (err) {
-        res.status(500).end(err);
-    }
-});
-
-// Serve admin page
-app.get('/admin*', (req, res) => {
+// Admin page route - MUST come before the catch-all route
+app.get('/admin', (req, res) => {
     res.sendFile(path.join(__dirname, '../admin/index.html'));
 });
 
-// Health check endpoint
-app.get('/api/health', async (req, res) => {
-    const db = req.app.locals.db;
-    const healthCheck = {
-        status: 'healthy',
-        timestamp: new Date().toISOString(),
-        service: 'Lily Designer Studio API',
-        version: process.env.npm_package_version || '1.0.0',
-        environment: process.env.NODE_ENV || 'development'
-    };
-
-    try {
-        // Test database connection
-        await db.query('SELECT 1 as test');
-        healthCheck.database = 'connected';
-        
-        res.json(healthCheck);
-    } catch (err) {
-        console.error('Health check database error:', err);
-        healthCheck.status = 'unhealthy';
-        healthCheck.database = 'disconnected';
-        healthCheck.error = err.message;
-        
-        res.status(503).json(healthCheck);
-    }
+// Admin page route for any admin path
+app.get('/admin/*', (req, res) => {
+    res.sendFile(path.join(__dirname, '../admin/index.html'));
 });
 
-// Serve the main page
-app.get('/', (req, res) => {
+// Public page - catch-all route for SPA
+app.get('*', (req, res) => {
+    // Don't serve admin paths from public
+    if (req.path.startsWith('/admin')) {
+        res.status(404).send('Admin page not found');
+        return;
+    }
     res.sendFile(path.join(__dirname, '../public/index.html'));
 });
 
-// Initialize database and start server
-async function initializeApp() {
+// Error handling middleware
+app.use((err, req, res, next) => {
+    console.error(err.stack);
+    res.status(500).json({ error: 'Something went wrong!' });
+});
+
+// Start server
+async function startServer() {
     try {
-        const db = await connectDatabase();
-        app.locals.db = db;
-        console.log('✅ Database connected and ready');
+        // Connect to database
+        await connectDatabase();
+        console.log('✅ Database connected successfully');
+        
+        // Setup cleanup cron job
+        setupCleanupCron();
+        console.log('✅ Cleanup cron job scheduled');
+        
+        // Start server
+        app.listen(PORT, () => {
+            console.log(`✅ Server running on http://localhost:${PORT}`);
+            console.log(`✅ Admin panel: http://localhost:${PORT}/admin`);
+            console.log(`✅ Public site: http://localhost:${PORT}`);
+        });
     } catch (error) {
-        console.warn('⚠️ Database connection failed, but starting server anyway for testing');
-        app.locals.db = null;
+        console.error('❌ Failed to start server:', error);
+        process.exit(1);
     }
-    
-    app.listen(PORT, () => {
-        console.log(`🚀 Server running on http://localhost:${PORT}`);
-        console.log(`👑 Admin panel (NO LOGIN): http://localhost:${PORT}/admin`);
-        console.log(`📊 Health check: http://localhost:${PORT}/api/health`);
-        console.log(`📁 Professional structure loaded`);
-    });
 }
 
-initializeApp().catch(error => {
-    console.error('Failed to start application:', error);
-    process.exit(1);
+// Handle graceful shutdown
+process.on('SIGTERM', () => {
+    console.log('SIGTERM received. Shutting down gracefully...');
+    process.exit(0);
 });
+
+process.on('SIGINT', () => {
+    console.log('SIGINT received. Shutting down gracefully...');
+    process.exit(0);
+});
+
+startServer();

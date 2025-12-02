@@ -1,158 +1,206 @@
 const express = require('express');
 const router = express.Router();
-const validation = require('../middleware/validation');
+const { pool } = require('../config/database');
+const { validateAppointment } = require('../middleware/validation');
 
-// Create new appointment with validation
-router.post('/', async (req, res) => {
-    const db = req.app.locals.db;
-    const validationResult = validation.validateAppointment(req.body);
-    
-    if (!validationResult.isValid) {
-        return res.status(400).json({ 
-            success: false,
-            error: 'Validation failed',
-            details: validationResult.errors 
-        });
-    }
-
-    const { firstName, familyName, phone, date, time } = validationResult.sanitizedData;
-
+// Book a new appointment
+router.post('/book-appointment', validateAppointment, async (req, res) => {
     try {
-        // Check if time slot is already booked
-        const checkSQL = `SELECT id FROM appointments WHERE date = $1 AND time = $2`;
-        const checkResult = await db.query(checkSQL, [date, time]);
+        const { firstName, familyName, phone, date, time } = req.body;
         
-        console.log('🔍 Slot check:', { date, time, existing: checkResult.rows.length });
+        // Get current date and time
+        const now = new Date();
+        const today = now.toISOString().split('T')[0];
+        const currentHour = now.getHours().toString().padStart(2, '0');
+        const currentMinute = now.getMinutes().toString().padStart(2, '0');
+        const currentTime = `${currentHour}:${currentMinute}`;
         
-        if (checkResult.rows.length > 0) {
-            return res.status(409).json({ 
-                success: false,
-                error: 'This time slot is already booked. Please choose a different time.' 
+        // Check if date is in the past
+        if (date < today) {
+            return res.status(400).json({ 
+                error: 'Cannot book appointments for past dates' 
             });
         }
         
-        // Book the appointment
-        const insertSQL = `INSERT INTO appointments (firstName, familyName, phone, date, time) 
-                         VALUES ($1, $2, $3, $4, $5) RETURNING id`;
-        const insertResult = await db.query(insertSQL, [firstName, familyName, phone, date, time]);
-        
-        // SUCCESS RESPONSE
-        res.json({
-            success: true,
-            message: 'Appointment saved successfully!',
-            id: insertResult.rows[0].id,
-            appointment: {
-                firstName,
-                familyName,
-                phone,
-                date,
-                time
-            }
-        });
-        
-    } catch (err) {
-        console.error('Database error:', err);
-        
-        // Provide more specific error information
-        if (err.code === '23505') { // PostgreSQL unique violation
-            return res.status(409).json({ 
-                success: false,
-                error: 'This time slot was just booked by another user. Please choose a different time.',
-                code: err.code
+        // Check if time is in the past (for today)
+        if (date === today && time <= currentTime) {
+            return res.status(400).json({ 
+                error: 'Cannot book appointments for past times' 
             });
         }
         
-        return res.status(500).json({ 
-            success: false,
-            error: 'Failed to save appointment',
-            code: err.code
+        // Check if slot is blocked
+        const blockedCheck = await pool.query(
+            `SELECT * FROM blocked_slots 
+             WHERE date = $1 AND (
+                all_day = true OR
+                (start_time <= $2 AND end_time >= $2) OR
+                (start_time IS NULL AND end_time IS NOT NULL AND $2 <= end_time) OR
+                (start_time IS NOT NULL AND end_time IS NULL AND $2 >= start_time)
+             )`,
+            [date, time]
+        );
+        
+        if (blockedCheck.rows.length > 0) {
+            return res.status(400).json({ 
+                error: 'This time slot is not available' 
+            });
+        }
+        
+        // Check if slot is already booked
+        const existingAppointment = await pool.query(
+            'SELECT * FROM appointments WHERE date = $1 AND time = $2',
+            [date, time]
+        );
+        
+        if (existingAppointment.rows.length > 0) {
+            return res.status(400).json({ 
+                error: 'This time slot is already booked' 
+            });
+        }
+        
+        // Insert the appointment
+        const result = await pool.query(
+            `INSERT INTO appointments 
+             (firstName, familyName, phone, date, time) 
+             VALUES ($1, $2, $3, $4, $5) 
+             RETURNING *`,
+            [firstName, familyName, phone, date, time]
+        );
+        
+        res.json({ 
+            success: true, 
+            message: 'Appointment booked successfully',
+            appointment: result.rows[0]
         });
-    }
-});
-
-// Get all appointments
-router.get('/', async (req, res) => {
-    const db = req.app.locals.db;
-    const sql = `SELECT * FROM appointments ORDER BY date, time`;
-    
-    try {
-        const result = await db.query(sql);
-        res.json({
-            success: true,
-            appointments: result.rows
-        });
-    } catch (err) {
-        console.error('Database error:', err);
-        return res.status(500).json({ 
-            success: false,
-            error: 'Failed to fetch appointments' 
-        });
+        
+    } catch (error) {
+        console.error('Booking error:', error);
+        
+        // Handle unique constraint violation
+        if (error.code === '23505') { // Unique violation
+            res.status(400).json({ 
+                error: 'This time slot is already booked' 
+            });
+        } else {
+            res.status(500).json({ 
+                error: 'Failed to book appointment' 
+            });
+        }
     }
 });
 
 // Get available time slots for a specific date
 router.get('/available-slots/:date', async (req, res) => {
-    const db = req.app.locals.db;
-    const date = req.params.date;
-    
-    if (!validation.isValidDate(date)) {
-        return res.status(400).json({ 
-            success: false,
-            error: 'Invalid date' 
-        });
-    }
-    
-    const allSlots = ['09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00'];
-    
     try {
-        const sql = `SELECT time FROM appointments WHERE date = $1`;
-        const result = await db.query(sql, [date]);
+        const date = req.params.date;
+        const allSlots = ['09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00'];
         
-        const bookedSlots = result.rows.map(row => {
-            // Handle PostgreSQL time format (HH:MM:SS or HH:MM)
+        // Get current date and time
+        const now = new Date();
+        const today = now.toISOString().split('T')[0];
+        const currentHour = now.getHours().toString().padStart(2, '0');
+        const currentMinute = now.getMinutes().toString().padStart(2, '0');
+        const currentTime = `${currentHour}:${currentMinute}`;
+        
+        // Get booked appointments
+        const bookedResult = await pool.query(
+            'SELECT time FROM appointments WHERE date = $1',
+            [date]
+        );
+        const bookedSlots = bookedResult.rows.map(row => {
             const time = row.time;
-            if (typeof time === 'string') {
-                return time.length > 5 ? time.substring(0, 5) : time; // Extract HH:MM from HH:MM:SS
-            }
-            return time;
+            return time.length > 5 ? time.substring(0, 5) : time;
         });
         
-        const availableSlots = allSlots.filter(slot => !bookedSlots.includes(slot));
+        // Get blocked slots
+        const blockedResult = await pool.query(`
+            SELECT * FROM blocked_slots 
+            WHERE date = $1
+        `, [date]);
+        
+        // Determine which slots are available
+        const availableSlots = allSlots.filter(slot => {
+            // Check if date is today and time is in the past
+            if (date === today && slot <= currentTime) {
+                return false;
+            }
+            
+            // Check if booked
+            if (bookedSlots.includes(slot)) return false;
+            
+            // Check if blocked
+            const isBlocked = blockedResult.rows.some(block => {
+                if (block.all_day) return true;
+                
+                if (block.start_time && block.end_time) {
+                    const blockStart = block.start_time.substring(0, 5);
+                    const blockEnd = block.end_time.substring(0, 5);
+                    return slot >= blockStart && slot <= blockEnd;
+                }
+                
+                if (block.start_time && !block.end_time) {
+                    return slot >= block.start_time.substring(0, 5);
+                }
+                
+                if (!block.start_time && block.end_time) {
+                    return slot <= block.end_time.substring(0, 5);
+                }
+                
+                return false;
+            });
+            
+            return !isBlocked;
+        });
         
         res.json({
             success: true,
             date: date,
             availableSlots: availableSlots,
             bookedSlots: bookedSlots,
-            allSlots: allSlots
+            allSlots: allSlots,
+            blockedSlots: blockedResult.rows,
+            blockedInfo: blockedResult.rows.map(b => ({
+                reason: b.reason,
+                time: b.all_day ? 'All day' : `${b.start_time || ''} - ${b.end_time || ''}`
+            })),
+            isToday: date === today,
+            currentTime: currentTime
         });
-    } catch (err) {
-        console.error('Database error:', err);
-        return res.status(500).json({ 
-            success: false,
-            error: 'Failed to fetch booked slots' 
-        });
+    } catch (error) {
+        console.error('Available slots error:', error);
+        res.status(500).json({ error: 'Failed to fetch available slots' });
     }
 });
 
-// Delete appointment (for testing)
-router.delete('/:id', async (req, res) => {
-    const db = req.app.locals.db;
-    const id = req.params.id;
-    
+// Cleanup old appointments (to be called by cron job)
+router.get('/cleanup-old-appointments', async (req, res) => {
     try {
-        const sql = `DELETE FROM appointments WHERE id = $1`;
-        await db.query(sql, [id]);
+        console.log('Starting appointment cleanup...');
+        
+        // Delete appointments older than yesterday
+        const yesterday = new Date();
+        yesterday.setDate(yesterday.getDate() - 1);
+        const yesterdayStr = yesterday.toISOString().split('T')[0];
+        
+        const result = await pool.query(
+            'DELETE FROM appointments WHERE date < $1 RETURNING *',
+            [yesterdayStr]
+        );
+        
+        console.log(`Cleaned up ${result.rows.length} old appointments`);
         
         res.json({
             success: true,
-            message: 'Appointment deleted successfully!'
+            message: `Cleaned up ${result.rows.length} old appointments`,
+            deletedAppointments: result.rows
         });
-    } catch (err) {
-        console.error('Database error:', err);
-        return res.status(500).json({ 
+        
+    } catch (error) {
+        console.error('Cleanup error:', error);
+        res.status(500).json({ 
             success: false,
-            error: 'Failed to delete appointment' 
+            error: 'Failed to cleanup old appointments' 
         });
     }
 });
