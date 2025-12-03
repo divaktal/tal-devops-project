@@ -208,8 +208,9 @@ class SimpleAdmin {
                 timeInfo = `Until ${slot.end_time.substring(0, 5)}`;
             }
             
+            // FIXED: Use start_date instead of date
             row.innerHTML = `
-                <td>${new Date(slot.date).toLocaleDateString()}</td>
+                <td>${new Date(slot.start_date).toLocaleDateString()}</td>
                 <td>${timeInfo}</td>
                 <td>${slot.reason || 'No reason'}</td>
                 <td>
@@ -545,7 +546,7 @@ class SimpleAdmin {
             if (!data.success || data.blockedSlots.length === 0) {
                 tbody.innerHTML = `
                     <tr>
-                        <td colspan="5" style="text-align: center;">
+                        <td colspan="6" style="text-align: center;"> <!-- Changed from 5 to 6 -->
                             No blocked slots found
                         </td>
                     </tr>
@@ -567,8 +568,10 @@ class SimpleAdmin {
                     timeInfo = `Until ${slot.end_time.substring(0, 5)}`;
                 }
                 
+                // FIXED: Use start_date and show end_date if exists
                 row.innerHTML = `
-                    <td>${new Date(slot.date).toLocaleDateString()}</td>
+                    <td>${new Date(slot.start_date).toLocaleDateString()}</td>
+                    <td>${slot.end_date ? new Date(slot.end_date).toLocaleDateString() : 'Single Day'}</td>
                     <td>${timeInfo}</td>
                     <td>${slot.reason || 'No reason'}</td>
                     <td>${slot.block_type || 'single'}</td>

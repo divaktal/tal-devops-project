@@ -294,14 +294,14 @@ router.get('/blocked-slots', async (req, res) => {
         const params = [];
         
         if (date) {
-            query += ' WHERE date = $1';
+            query += ' WHERE start_date = $1';
             params.push(date);
         } else if (start_date && end_date) {
-            query += ' WHERE date BETWEEN $1 AND $2';
+            query += ' WHERE start_date >= $1 AND start_date <= $2';
             params.push(start_date, end_date);
         }
         
-        query += ' ORDER BY date, start_time';
+        query += ' ORDER BY start_date, start_time';
         
         const result = await pool.query(query, params);
         res.json({ success: true, blockedSlots: result.rows });
@@ -311,7 +311,6 @@ router.get('/blocked-slots', async (req, res) => {
     }
 });
 
-// Check if a specific time slot is blocked
 router.get('/blocked-slots/check', async (req, res) => {
     try {
         const { date, time } = req.query;
@@ -323,7 +322,8 @@ router.get('/blocked-slots/check', async (req, res) => {
         // Check for all-day blocks
         const allDayQuery = `
             SELECT * FROM blocked_slots 
-            WHERE date = $1 AND all_day = true
+            WHERE start_date = $1
+            AND all_day = true
         `;
         const allDayResult = await pool.query(allDayQuery, [date]);
         
@@ -331,8 +331,7 @@ router.get('/blocked-slots/check', async (req, res) => {
             return res.json({ 
                 success: true, 
                 isBlocked: true, 
-                reason: allDayResult.rows[0].reason,
-                blockType: 'all_day'
+                reason: allDayResult.rows[0].reason
             });
         }
         
@@ -340,7 +339,8 @@ router.get('/blocked-slots/check', async (req, res) => {
         if (time) {
             const timeQuery = `
                 SELECT * FROM blocked_slots 
-                WHERE date = $1 AND (
+                WHERE start_date = $1
+                AND (
                     (start_time IS NULL AND end_time IS NULL) OR
                     ($2::time BETWEEN start_time AND end_time) OR
                     (start_time IS NOT NULL AND end_time IS NULL AND $2::time >= start_time) OR
@@ -353,8 +353,7 @@ router.get('/blocked-slots/check', async (req, res) => {
                 return res.json({ 
                     success: true, 
                     isBlocked: true, 
-                    reason: timeResult.rows[0].reason,
-                    blockType: timeResult.rows[0].block_type
+                    reason: timeResult.rows[0].reason
                 });
             }
         }
@@ -366,7 +365,7 @@ router.get('/blocked-slots/check', async (req, res) => {
     }
 });
 
-// Add blocked slot
+// Add blocked slot - ALL DAYS STORED AS INDIVIDUAL ENTRIES
 router.post('/blocked-slots', async (req, res) => {
     try {
         const { 
@@ -374,73 +373,173 @@ router.post('/blocked-slots', async (req, res) => {
             start_time, 
             end_time, 
             all_day, 
-            reason, 
-            block_type,
-            recurring_pattern
+            reason,
+            end_date,  // For date ranges
+            recurring_pattern // For weekly recurring
         } = req.body;
+        
+        console.log('Block request:', req.body);
         
         // Validate
         if (!date) {
             return res.status(400).json({ error: 'Date is required' });
         }
         
-        // For recurring blocks, create multiple entries
-        let slotsToCreate = [{ date, start_time, end_time, all_day, reason, block_type }];
+        let slotsToCreate = [];
         
-       if (recurring_pattern && block_type === 'weekly') {
-    const { days, weeks } = recurring_pattern;
-    if (days && Array.isArray(days)) {
-        // Create slots for each day for the next X weeks
-        const baseDate = new Date(date);
-        slotsToCreate = [];
-        
-        for (let week = 0; week < (weeks || 4); week++) {
-            days.forEach(dayIndex => {
-                const slotDate = new Date(baseDate);
-                // Calculate the target date
-                // dayIndex: 0=Sunday, 1=Monday, ..., 6=Saturday
-                const currentDayOfWeek = baseDate.getDay(); // 0-6
-                let daysToAdd = (dayIndex - currentDayOfWeek + 7) % 7;
-                daysToAdd += (week * 7);
+        // ========== DATE RANGE LOGIC ==========
+        if (end_date) {
+            const startDate = new Date(date);
+            const rangeEndDate = new Date(end_date);
+            
+            // Validate
+            if (rangeEndDate < startDate) {
+                return res.status(400).json({ error: 'End date must be after start date' });
+            }
+            
+            // Create separate entries for each day in the range
+            const currentDate = new Date(startDate);
+            
+            while (currentDate <= rangeEndDate) {
+                const dateStr = currentDate.toISOString().split('T')[0];
                 
-                slotDate.setDate(slotDate.getDate() + daysToAdd);
+                // Check if this specific day is already blocked
+                const existingCheck = await pool.query(`
+                    SELECT id FROM blocked_slots 
+                    WHERE start_date = $1
+                    AND (
+                        $2 = true OR  -- If trying to add all-day block
+                        ($3::time BETWEEN start_time AND end_time) OR
+                        (start_time IS NULL AND end_time IS NOT NULL AND $3::time <= end_time) OR
+                        (start_time IS NOT NULL AND end_time IS NULL AND $3::time >= start_time)
+                    )
+                `, [dateStr, all_day, start_time || '09:00']);
                 
-                // Only create if it's a future date (not the original)
-                if (slotDate.toISOString().split('T')[0] !== date) {
-                    slotsToCreate.push({
-                        date: slotDate.toISOString().split('T')[0],
-                        start_time,
-                        end_time,
-                        all_day,
-                        reason: `${reason} (Recurring Week ${week + 1})`,
-                        block_type,
-                        recurring_pattern: JSON.stringify(recurring_pattern)
+                if (existingCheck.rows.length === 0) {
+                    slotsToCreate.push({ 
+                        start_date: dateStr,
+                        end_date: null,  // Individual day, no end_date
+                        start_time: all_day ? null : (start_time || '09:00'),
+                        end_time: all_day ? null : (end_time || '17:00'),
+                        all_day: all_day || false,
+                        reason: reason || 'Blocked'
                     });
                 }
+                
+                // Move to next day
+                currentDate.setDate(currentDate.getDate() + 1);
+            }
+        }
+        // ========== WEEKLY RECURRING LOGIC ==========
+        else if (recurring_pattern && recurring_pattern.type === 'weekly') {
+            const { days, weeks } = recurring_pattern;
+            if (days && Array.isArray(days)) {
+                const baseDate = new Date(date);
+                
+                for (let week = 0; week < (weeks || 4); week++) {
+                    days.forEach(dayIndex => {
+                        const slotDate = new Date(baseDate);
+                        
+                        // Calculate days to add
+                        const currentDayOfWeek = baseDate.getDay();
+                        let daysToAdd = (dayIndex - currentDayOfWeek + 7) % 7;
+                        
+                        // Skip if it's today (unless week > 0)
+                        if (week === 0 && daysToAdd === 0) {
+                            daysToAdd = 7; // Skip to next week
+                        } else {
+                            daysToAdd += (week * 7);
+                        }
+                        
+                        slotDate.setDate(slotDate.getDate() + daysToAdd);
+                        const slotDateStr = slotDate.toISOString().split('T')[0];
+                        
+                        // Check if this specific day is already blocked
+                        const existingCheck = pool.query(`
+                            SELECT id FROM blocked_slots 
+                            WHERE start_date = $1
+                            AND (
+                                $2 = true OR
+                                ($3::time BETWEEN start_time AND end_time) OR
+                                (start_time IS NULL AND end_time IS NOT NULL AND $3::time <= end_time) OR
+                                (start_time IS NOT NULL AND end_time IS NULL AND $3::time >= start_time)
+                            )
+                        `, [slotDateStr, all_day, start_time || '09:00']).then(result => result.rows.length === 0);
+                        
+                        // We'll check duplicates in the insert loop
+                        slotsToCreate.push({
+                            start_date: slotDateStr,
+                            end_date: null,
+                            start_time: all_day ? null : (start_time || '09:00'),
+                            end_time: all_day ? null : (end_time || '17:00'),
+                            all_day: all_day || false,
+                            reason: reason || 'Blocked'
+                        });
+                    });
+                }
+            }
+        }
+        // ========== SINGLE DAY LOGIC ==========
+        else {
+            // Check for existing blocks on this date
+            const existingCheck = await pool.query(`
+                SELECT id FROM blocked_slots 
+                WHERE start_date = $1
+                AND (
+                    $2 = true OR  -- If trying to add all-day block
+                    ($3::time BETWEEN start_time AND end_time) OR
+                    (start_time IS NULL AND end_time IS NOT NULL AND $3::time <= end_time) OR
+                    (start_time IS NOT NULL AND end_time IS NULL AND $3::time >= start_time)
+                )
+            `, [date, all_day, start_time || '09:00']);
+            
+            if (existingCheck.rows.length === 0) {
+                slotsToCreate.push({ 
+                    start_date: date,
+                    end_date: null,
+                    start_time: all_day ? null : (start_time || '09:00'),
+                    end_time: all_day ? null : (end_time || '17:00'),
+                    all_day: all_day || false,
+                    reason: reason || 'Blocked'
+                });
+            }
+        }
+        
+        console.log(`Creating ${slotsToCreate.length} slot(s)`);
+        
+        if (slotsToCreate.length === 0) {
+            return res.status(400).json({ 
+                error: 'All selected time slots are already blocked' 
             });
         }
-    }
-}
         
         // Insert all slots
         const insertedSlots = [];
         for (const slot of slotsToCreate) {
-            const result = await pool.query(
-                `INSERT INTO blocked_slots 
-                (date, start_time, end_time, all_day, reason, block_type, recurring_pattern)
-                VALUES ($1, $2, $3, $4, $5, $6, $7)
-                RETURNING *`,
-                [
-                    slot.date,
-                    slot.start_time || null,
-                    slot.end_time || null,
-                    slot.all_day || false,
-                    slot.reason || '',
-                    slot.block_type || 'single',
-                    slot.recurring_pattern || null
-                ]
+            try {
+                const result = await pool.query(
+                    `INSERT INTO blocked_slots 
+                    (start_date, end_date, start_time, end_time, all_day, reason)
+                    VALUES ($1, $2, $3, $4, $5, $6)
+                    RETURNING *`,
+                    [
+                        slot.start_date,
+                        slot.end_date,
+                        slot.start_time,
+                        slot.end_time,
+                        slot.all_day,
+                        slot.reason || ''
+                    ]
                 );
-            insertedSlots.push(result.rows[0]);
+                insertedSlots.push(result.rows[0]);
+                console.log(`Created block: ${slot.start_date}`);
+            } catch (insertError) {
+                if (insertError.code === '23505') { // Unique violation
+                    console.log(`Skipping duplicate: ${slot.start_date}`);
+                    continue;
+                }
+                throw insertError;
+            }
         }
         
         res.json({ 
@@ -448,9 +547,25 @@ router.post('/blocked-slots', async (req, res) => {
             message: `Created ${insertedSlots.length} blocked slot(s)`,
             blockedSlots: insertedSlots
         });
+        
     } catch (error) {
         console.error('Add blocked slot error:', error);
-        res.status(500).json({ error: 'Failed to add blocked slot' });
+        console.error('Error details:', error.message, error.code);
+        
+        if (error.code === '23505') {
+            res.status(400).json({ 
+                error: 'This time slot is already blocked' 
+            });
+        } else if (error.code === '23502') {
+            res.status(400).json({ 
+                error: 'Missing required fields' 
+            });
+        } else {
+            res.status(500).json({ 
+                error: 'Failed to add blocked slot',
+                details: process.env.NODE_ENV === 'development' ? error.message : undefined
+            });
+        }
     }
 });
 
@@ -496,7 +611,7 @@ router.get('/available-slots/:date', async (req, res) => {
         // Get blocked slots
         const blockedResult = await pool.query(`
             SELECT * FROM blocked_slots 
-            WHERE date = $1
+            WHERE start_date = $1
         `, [date]);
         
         // Determine which slots are available
@@ -566,8 +681,8 @@ router.get('/appointments/timeline', async (req, res) => {
         // Get blocked slots for the same date
         const blockedSlotsResult = await pool.query(
             `SELECT * FROM blocked_slots 
-             WHERE date = $1 
-             ORDER BY start_time`,
+            WHERE start_date = $1
+            ORDER BY start_time`,
             [date]
         );
         
@@ -663,11 +778,10 @@ router.get('/appointments/calendar', async (req, res) => {
         
         // Get blocked days for the month
         const blockedDaysResult = await pool.query(
-            `SELECT date, COUNT(*) as count
-             FROM blocked_slots 
-             WHERE date >= $1 AND date <= $2
-             GROUP BY date
-             ORDER BY date`,
+            `SELECT DISTINCT start_date as date
+            FROM blocked_slots 
+            WHERE start_date >= $1 AND start_date <= $2
+            ORDER BY start_date`,
             [startDate, endDate]
         );
         
@@ -691,7 +805,7 @@ router.get('/appointments/calendar', async (req, res) => {
                 appointmentCount: appointmentsForDay ? parseInt(appointmentsForDay.count) : 0,
                 appointmentTimes: appointmentsForDay ? appointmentsForDay.times : [],
                 isBlocked: !!blockedForDay,
-                blockedCount: blockedForDay ? parseInt(blockedForDay.count) : 0
+                blockedCount: blockedForDay ? 1 : 0 
             });
         }
         

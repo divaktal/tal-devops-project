@@ -53,6 +53,22 @@
     <div class="scheduling" id="schedule">
         <h2>Book a Visit</h2>
         <p class="subtitle">Schedule your personalized consultation with us</p>
+        
+        <!-- Debug Message Area -->
+        <div id="debugMessages" style="display: none; background: #f0f0f0; padding: 10px; margin: 10px 0; border-radius: 5px; font-family: monospace;">
+            <h4>Debug Info:</h4>
+            <div id="debugContent"></div>
+        </div>
+        
+        <!-- Error/Success Messages -->
+        <div id="errorMessage" style="display: none; background: #ffebee; color: #c62828; padding: 15px; margin: 10px 0; border-radius: 5px; border-left: 4px solid #c62828;">
+            <span id="errorText"></span>
+        </div>
+        
+        <div id="successMessage" style="display: none; background: #e8f5e9; color: #2e7d32; padding: 15px; margin: 10px 0; border-radius: 5px; border-left: 4px solid #4caf50;">
+            <span id="successText"></span>
+        </div>
+        
         <form id="scheduleForm">
             <div class="form-row">
                 <div class="form-group">
@@ -75,13 +91,13 @@
 
             <div class="form-row">
                 <div class="form-group">
-                    <label for="date">Preferred Date</label>
-                    <input type="date" id="date" name="date" required>
+                    <label for="appointmentDate">Preferred Date</label>
+                    <input type="date" id="appointmentDate" name="date" required>
                     <span class="error-message" id="dateError"></span>
                 </div>
                 <div class="form-group">
-                    <label for="time">Preferred Time</label>
-                    <select id="time" name="time" required>
+                    <label for="appointmentTime">Preferred Time</label>
+                    <select id="appointmentTime" name="time" required>
                         <option value="">Select an hour</option>
                         <option value="09:00">9:00 AM</option>
                         <option value="10:00">10:00 AM</option>
@@ -97,12 +113,16 @@
                 </div>
             </div>
 
-            <button type="submit" class="submit-btn">
+            <button type="submit" class="submit-btn" id="submitBtn">
                 <span class="btn-text">Schedule Appointment</span>
                 <span class="btn-icon">📅</span>
             </button>
         </form>
         
+        <!-- Available Times Info -->
+        <div id="availableTimesInfo" style="margin-top: 20px;"></div>
+        
+        <!-- Original confirmation (kept for compatibility) -->
         <div class="confirmation-message" id="confirmationMessage" style="display: none;">
             <div class="confirmation-icon">✅</div>
             <h3>Appointment Scheduled!</h3>

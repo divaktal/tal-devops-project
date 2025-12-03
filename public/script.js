@@ -1,5 +1,54 @@
 // ============ APPOINTMENT BOOKING SYSTEM ============
 
+// Debug function
+function showDebug(message) {
+    const debugDiv = document.getElementById('debugMessages');
+    const debugContent = document.getElementById('debugContent');
+    if (debugDiv && debugContent) {
+        debugDiv.style.display = 'block';
+        debugContent.innerHTML += `<div style="margin: 5px 0;">${new Date().toLocaleTimeString()}: ${message}</div>`;
+        console.log('DEBUG:', message);
+    }
+}
+
+// Show error message
+function showError(message) {
+    showDebug(`ERROR: ${message}`);
+    const errorDiv = document.getElementById('errorMessage');
+    const errorText = document.getElementById('errorText');
+    if (errorDiv && errorText) {
+        errorDiv.style.display = 'block';
+        errorText.textContent = message;
+    } else {
+        alert('Error: ' + message);
+    }
+}
+
+// Show success message
+function showSuccess(message, details = '') {
+    showDebug(`SUCCESS: ${message}`);
+    const successDiv = document.getElementById('successMessage');
+    const successText = document.getElementById('successText');
+    if (successDiv && successText) {
+        successDiv.style.display = 'block';
+        successText.innerHTML = `<strong>${message}</strong>${details ? '<br>' + details : ''}`;
+    }
+    
+    // Also show the original confirmation
+    const confirmation = document.getElementById('confirmationMessage');
+    if (confirmation) {
+        confirmation.style.display = 'block';
+    }
+}
+
+// Hide messages
+function hideMessages() {
+    const errorDiv = document.getElementById('errorMessage');
+    const successDiv = document.getElementById('successMessage');
+    if (errorDiv) errorDiv.style.display = 'none';
+    if (successDiv) successDiv.style.display = 'none';
+}
+
 // Utility function to format date as YYYY-MM-DD
 function formatDate(date) {
     const d = new Date(date);
@@ -42,27 +91,25 @@ function isTimeInPast(selectedDate, selectedTime) {
 
 // Initialize booking system
 document.addEventListener('DOMContentLoaded', function() {
+    showDebug('Page loaded, initializing booking system...');
+    
     const dateInput = document.getElementById('appointmentDate');
     const timeSelect = document.getElementById('appointmentTime');
-    const bookingForm = document.getElementById('bookingForm');
-    const availableTimesDiv = document.getElementById('availableTimes');
-    const loadingDiv = document.getElementById('loading');
-    const errorDiv = document.getElementById('error');
-    const successDiv = document.getElementById('success');
+    const bookingForm = document.getElementById('scheduleForm');
+    const submitBtn = document.getElementById('submitBtn');
+    
+    showDebug(`Elements found: dateInput=${!!dateInput}, timeSelect=${!!timeSelect}, bookingForm=${!!bookingForm}, submitBtn=${!!submitBtn}`);
     
     // Set minimum date to today
     if (dateInput) {
-        dateInput.min = getTodayDate();
+        const today = getTodayDate();
+        dateInput.min = today;
+        showDebug(`Set minimum date to: ${today}`);
         
-        // Disable past dates
-        const today = new Date();
-        const yesterday = new Date(today);
-        yesterday.setDate(yesterday.getDate() - 1);
-        const maxPastDate = formatDate(yesterday);
-        
+        // Set all date inputs minimum
         const allDateInputs = document.querySelectorAll('input[type="date"]');
         allDateInputs.forEach(input => {
-            input.min = getTodayDate();
+            input.min = today;
         });
     }
     
@@ -70,6 +117,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (dateInput && timeSelect) {
         dateInput.addEventListener('change', function() {
             const selectedDate = this.value;
+            showDebug(`Date changed to: ${selectedDate}`);
             
             if (!selectedDate) {
                 timeSelect.innerHTML = '<option value="">Select a date first</option>';
@@ -80,15 +128,27 @@ document.addEventListener('DOMContentLoaded', function() {
             timeSelect.innerHTML = '<option value="">Loading available times...</option>';
             timeSelect.disabled = true;
             
-            // Show loading
-            if (loadingDiv) loadingDiv.style.display = 'block';
-            if (errorDiv) errorDiv.style.display = 'none';
-            
             // Fetch available times for selected date
-            fetch(`/api/available-slots/${selectedDate}`)
-                .then(response => response.json())
+            showDebug(`Fetching available slots for: ${selectedDate}`);
+            
+            // Add timeout to this fetch too
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => {
+                controller.abort();
+                timeSelect.innerHTML = '<option value="">Request timeout</option>';
+                showError('Failed to load available times: Request timed out');
+            }, 5000);
+            
+            fetch(`/api/available-slots/${selectedDate}`, {
+                signal: controller.signal
+            })
+                .then(response => {
+                    clearTimeout(timeoutId);
+                    showDebug(`API Response status: ${response.status}`);
+                    return response.json();
+                })
                 .then(data => {
-                    if (loadingDiv) loadingDiv.style.display = 'none';
+                    showDebug(`Available slots data received: ${JSON.stringify(data)}`);
                     
                     if (data.success) {
                         // Clear options
@@ -96,14 +156,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         
                         if (data.availableSlots.length === 0) {
                             timeSelect.innerHTML = '<option value="">No available times</option>';
-                            if (availableTimesDiv) {
-                                availableTimesDiv.innerHTML = `
-                                    <div class="error-message">
-                                        <i class="fas fa-calendar-times"></i>
-                                        <p>No available time slots for ${selectedDate}. Please select another date.</p>
-                                    </div>
-                                `;
-                            }
+                            showDebug('No available time slots for selected date');
                         } else {
                             // Filter out past times if date is today
                             const currentTime = getCurrentTime();
@@ -116,14 +169,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             
                             if (validSlots.length === 0) {
                                 timeSelect.innerHTML = '<option value="">No more available times today</option>';
-                                if (availableTimesDiv) {
-                                    availableTimesDiv.innerHTML = `
-                                        <div class="error-message">
-                                            <i class="fas fa-clock"></i>
-                                            <p>No more available time slots for today. Please select another date.</p>
-                                        </div>
-                                    `;
-                                }
+                                showDebug('No more available time slots for today');
                             } else {
                                 // Add options for valid slots
                                 validSlots.forEach(slot => {
@@ -134,34 +180,22 @@ document.addEventListener('DOMContentLoaded', function() {
                                 });
                                 
                                 timeSelect.disabled = false;
-                                
-                                // Display blocked slots info
-                                if (availableTimesDiv && data.blockedInfo && data.blockedInfo.length > 0) {
-                                    let blockedInfoHTML = '<div class="blocked-info"><h4>Note:</h4><ul>';
-                                    data.blockedInfo.forEach(info => {
-                                        blockedInfoHTML += `<li>${info.time}: ${info.reason}</li>`;
-                                    });
-                                    blockedInfoHTML += '</ul></div>';
-                                    availableTimesDiv.innerHTML = blockedInfoHTML;
-                                } else if (availableTimesDiv) {
-                                    availableTimesDiv.innerHTML = '';
-                                }
+                                showDebug(`Added ${validSlots.length} time slots: ${validSlots.join(', ')}`);
                             }
                         }
                     } else {
                         timeSelect.innerHTML = '<option value="">Error loading times</option>';
-                        if (errorDiv) {
-                            errorDiv.style.display = 'block';
-                            errorDiv.innerHTML = `<p>Error: ${data.error || 'Failed to load available times'}</p>`;
-                        }
+                        showError(`Error loading available slots: ${data.error || 'Unknown error'}`);
                     }
                 })
                 .catch(error => {
-                    if (loadingDiv) loadingDiv.style.display = 'none';
-                    timeSelect.innerHTML = '<option value="">Error loading times</option>';
-                    if (errorDiv) {
-                        errorDiv.style.display = 'block';
-                        errorDiv.innerHTML = '<p>Network error. Please try again.</p>';
+                    clearTimeout(timeoutId);
+                    if (error.name === 'AbortError') {
+                        timeSelect.innerHTML = '<option value="">Request timeout</option>';
+                        showError('Request timed out loading available times');
+                    } else {
+                        timeSelect.innerHTML = '<option value="">Error loading times</option>';
+                        showError('Network error loading available times');
                     }
                     console.error('Error fetching available times:', error);
                 });
@@ -170,94 +204,101 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Form submission
     if (bookingForm) {
-        bookingForm.addEventListener('submit', function(e) {
+        bookingForm.addEventListener('submit', async function(e) {
             e.preventDefault();
+            showDebug('Form submission started');
             
+            // Get form values
             const firstName = document.getElementById('firstName').value.trim();
             const familyName = document.getElementById('familyName').value.trim();
             const phone = document.getElementById('phone').value.trim();
             const date = document.getElementById('appointmentDate').value;
             const time = document.getElementById('appointmentTime').value;
             
+            showDebug(`Form values: firstName=${firstName}, familyName=${familyName}, phone=${phone}, date=${date}, time=${time}`);
+            
             // Validation
             if (!firstName || !familyName || !phone || !date || !time) {
-                if (errorDiv) {
-                    errorDiv.style.display = 'block';
-                    errorDiv.innerHTML = '<p>Please fill in all required fields.</p>';
-                }
+                showError('Please fill in all required fields.');
                 return;
             }
             
             // Check if time is in the past
             if (isTimeInPast(date, time)) {
-                if (errorDiv) {
-                    errorDiv.style.display = 'block';
-                    errorDiv.innerHTML = '<p>Cannot book appointments in the past. Please select a future time.</p>';
-                }
+                showError('Cannot book appointments in the past. Please select a future time.');
                 return;
             }
             
             // Validate phone number (basic validation)
-            const phoneRegex = /^[\d\s\-\+\(\)]{10,}$/;
-            if (!phoneRegex.test(phone.replace(/\s/g, ''))) {
-                if (errorDiv) {
-                    errorDiv.style.display = 'block';
-                    errorDiv.innerHTML = '<p>Please enter a valid phone number.</p>';
-                }
+            const phoneDigits = phone.replace(/\D/g, '');
+            if (phoneDigits.length < 10) {
+                showError('Please enter a valid phone number (at least 10 digits).');
                 return;
             }
             
             // Show loading
-            const submitBtn = bookingForm.querySelector('button[type="submit"]');
-            const originalBtnText = submitBtn.innerHTML;
-            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Booking...';
-            submitBtn.disabled = true;
+            if (submitBtn) {
+                const originalBtnText = submitBtn.innerHTML;
+                submitBtn.innerHTML = '⏳ Booking...';
+                submitBtn.disabled = true;
+                submitBtn.style.opacity = '0.7';
+            }
             
-            if (errorDiv) errorDiv.style.display = 'none';
-            if (successDiv) successDiv.style.display = 'none';
+            hideMessages();
             
             // Prepare data
             const appointmentData = {
                 firstName: firstName,
                 familyName: familyName,
-                phone: phone,
+                phone: phoneDigits, // Send only digits
                 date: date,
                 time: time
             };
             
-            // Send booking request
-            fetch('/api/book-appointment', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(appointmentData)
-            })
-            .then(response => response.json())
-            .then(data => {
+            showDebug(`Sending appointment data: ${JSON.stringify(appointmentData)}`);
+            
+            // Add timeout to fetch
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => {
+                controller.abort();
+            }, 10000); // 10 second timeout
+            
+            try {
+                // Send booking request
+                const response = await fetch('/api/book-appointment', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(appointmentData),
+                    signal: controller.signal
+                });
+                
+                clearTimeout(timeoutId);
+                showDebug(`API Response status: ${response.status}`);
+                
+                const data = await response.json();
+                showDebug(`API Response data: ${JSON.stringify(data)}`);
+                
                 // Reset button
-                submitBtn.innerHTML = originalBtnText;
-                submitBtn.disabled = false;
+                if (submitBtn) {
+                    submitBtn.innerHTML = 'Schedule Appointment';
+                    submitBtn.disabled = false;
+                    submitBtn.style.opacity = '1';
+                }
                 
                 if (data.success) {
                     // Show success message
-                    if (successDiv) {
-                        successDiv.style.display = 'block';
-                        successDiv.innerHTML = `
-                            <div class="success-content">
-                                <i class="fas fa-check-circle"></i>
-                                <h3>Appointment Booked Successfully!</h3>
-                                <p>Your appointment has been confirmed for:</p>
-                                <div class="appointment-details">
-                                    <p><strong>Date:</strong> ${new Date(date).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
-                                    <p><strong>Time:</strong> ${time}</p>
-                                    <p><strong>Name:</strong> ${firstName} ${familyName}</p>
-                                    <p><strong>Phone:</strong> ${phone}</p>
-                                </div>
-                                <p class="confirmation-note">You will receive a confirmation call shortly.</p>
-                            </div>
-                        `;
-                    }
+                    const details = `
+                        <div style="margin-top: 10px; padding: 10px; background: white; border-radius: 5px;">
+                            <p><strong>Date:</strong> ${new Date(date).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
+                            <p><strong>Time:</strong> ${time}</p>
+                            <p><strong>Name:</strong> ${firstName} ${familyName}</p>
+                            <p><strong>Phone:</strong> ${phone}</p>
+                        </div>
+                    `;
+                    
+                    showSuccess('Appointment Booked Successfully!', details);
                     
                     // Reset form
                     bookingForm.reset();
@@ -268,34 +309,32 @@ document.addEventListener('DOMContentLoaded', function() {
                         timeSelect.disabled = true;
                     }
                     
-                    // Clear available times display
-                    if (availableTimesDiv) {
-                        availableTimesDiv.innerHTML = '';
+                    // Reset date input min
+                    if (dateInput) {
+                        dateInput.min = getTodayDate();
                     }
-                    
-                    // Scroll to success message
-                    successDiv.scrollIntoView({ behavior: 'smooth' });
                     
                 } else {
-                    // Show error
-                    if (errorDiv) {
-                        errorDiv.style.display = 'block';
-                        errorDiv.innerHTML = `<p>${data.error || 'Failed to book appointment'}</p>`;
-                    }
+                    showError(data.error || 'Failed to book appointment. Please try again.');
                 }
-            })
-            .catch(error => {
-                // Reset button
-                submitBtn.innerHTML = originalBtnText;
-                submitBtn.disabled = false;
                 
-                // Show error
-                if (errorDiv) {
-                    errorDiv.style.display = 'block';
-                    errorDiv.innerHTML = '<p>Network error. Please try again.</p>';
+            } catch (error) {
+                clearTimeout(timeoutId);
+                
+                // Reset button
+                if (submitBtn) {
+                    submitBtn.innerHTML = 'Schedule Appointment';
+                    submitBtn.disabled = false;
+                    submitBtn.style.opacity = '1';
+                }
+                
+                if (error.name === 'AbortError') {
+                    showError('Request timed out. Server may not be responding.');
+                } else {
+                    showError('Network error. Please check your connection and try again.');
                 }
                 console.error('Error booking appointment:', error);
-            });
+            }
         });
     }
     
@@ -315,6 +354,46 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 });
+
+// Manual test function (run in browser console)
+window.testBooking = function() {
+    const testData = {
+        firstName: "Test",
+        familyName: "User",
+        phone: "1234567890",
+        date: new Date(Date.now() + 86400000).toISOString().split('T')[0], // Tomorrow
+        time: "10:00"
+    };
+    
+    console.log('Testing booking with:', testData);
+    
+    fetch('/api/book-appointment', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(testData)
+    })
+    .then(response => {
+        console.log('Response status:', response.status);
+        return response.json();
+    })
+    .then(data => console.log('Response:', data))
+    .catch(error => console.error('Error:', error));
+};
+
+// Test server connection
+window.testServer = function() {
+    console.log('Testing server connection...');
+    
+    fetch('/api/available-slots/2024-12-04')
+        .then(response => {
+            console.log('Status:', response.status);
+            return response.json();
+        })
+        .then(data => console.log('Data:', data))
+        .catch(err => console.error('Error:', err));
+};
 
 // ============ PHOTO GALLERY ============
 document.addEventListener('DOMContentLoaded', function() {
@@ -388,3 +467,30 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 });
+
+// Manual test function (run in browser console)
+window.testBooking = function() {
+    const testData = {
+        firstName: "Test",
+        familyName: "User",
+        phone: "1234567890",
+        date: new Date(Date.now() + 86400000).toISOString().split('T')[0], // Tomorrow
+        time: "10:00"
+    };
+    
+    console.log('Testing booking with:', testData);
+    
+    fetch('/api/book-appointment', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(testData)
+    })
+    .then(response => {
+        console.log('Response status:', response.status);
+        return response.json();
+    })
+    .then(data => console.log('Response:', data))
+    .catch(error => console.error('Error:', error));
+};
