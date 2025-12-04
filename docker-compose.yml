@@ -26,6 +26,8 @@ services:
       - DB_NAME=lily_studio
       - DB_USER=lily_user
       - DB_PASSWORD=lily123
+    volumes:
+      - ./public/uploads:/app/public/uploads:z
     depends_on:
       postgres:
         condition: service_healthy
@@ -41,7 +43,7 @@ services:
     ports:
       - "9090:9090"
     volumes:
-      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:z
       - prometheus_data:/prometheus
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'

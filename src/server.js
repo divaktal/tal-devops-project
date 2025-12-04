@@ -4,6 +4,27 @@ const cors = require('cors');
 const { connectDatabase } = require('./config/database');
 const { setupCleanupCron } = require('./scripts/cleanup-cron');
 
+// Prometheus metrics
+const promClient = require('prom-client');
+const register = promClient.register;
+
+// Collect default metrics (CPU, memory, etc.)
+promClient.collectDefaultMetrics({ register });
+
+// Custom metrics
+const httpRequestDuration = new promClient.Histogram({
+    name: 'http_request_duration_seconds',
+    help: 'Duration of HTTP requests in seconds',
+    labelNames: ['method', 'route', 'status_code'],
+    buckets: [0.1, 0.3, 0.5, 0.7, 1, 3, 5, 7, 10]
+});
+
+const httpRequestTotal = new promClient.Counter({
+    name: 'http_requests_total',
+    help: 'Total number of HTTP requests',
+    labelNames: ['method', 'route', 'status_code']
+});
+
 // Import routes
 const appointmentsRouter = require('./routes/appointments');
 const adminRouter = require('./routes/admin');
@@ -32,6 +53,18 @@ app.use((req, res, next) => {
     next();
 });
 
+// Prometheus metrics middleware
+app.use((req, res, next) => {
+    const start = Date.now();
+    res.on('finish', () => {
+        const duration = (Date.now() - start) / 1000;
+        const route = req.route?.path || req.path;
+        httpRequestDuration.labels(req.method, route, res.statusCode).observe(duration);
+        httpRequestTotal.labels(req.method, route, res.statusCode).inc();
+    });
+    next();
+});
+
 // Serve static files from public folder
 app.use(express.static(path.join(__dirname, '../public'), {
     maxAge: '1d',
@@ -56,6 +89,12 @@ app.get('/api/health', (req, res) => {
         timestamp: new Date().toISOString(),
         service: 'Lily Studio Appointment System'
     });
+});
+
+// Prometheus metrics endpoint
+app.get('/metrics', async (req, res) => {
+    res.set('Content-Type', register.contentType);
+    res.end(await register.metrics());
 });
 
 // Admin page route - MUST come before the catch-all route
