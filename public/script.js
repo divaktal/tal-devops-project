@@ -397,7 +397,7 @@ window.testServer = function() {
 
 // ============ PHOTO GALLERY ============
 document.addEventListener('DOMContentLoaded', function() {
-    const gallery = document.getElementById('photoGallery');
+    const gallery = document.getElementById('portfolioGallery');
     const categoryFilter = document.getElementById('categoryFilter');
     
     if (gallery) {
