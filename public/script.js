@@ -397,36 +397,30 @@ window.testServer = function() {
 
 // ============ PHOTO GALLERY ============
 document.addEventListener('DOMContentLoaded', function() {
-    const gallery = document.getElementById('photoGallery');
-    const categoryFilter = document.getElementById('categoryFilter');
+    const gallery = document.getElementById('portfolioGallery'); // Changed from 'photoGallery' to match HTML
+    const categoryFilter = document.getElementById('categoryFilter'); // This doesn't exist in your HTML
     
-    if (gallery) {
-        loadPhotos();
-    }
+    // Load photos on page load
+    loadPhotos();
     
-    if (categoryFilter) {
-        categoryFilter.addEventListener('change', loadPhotos);
-    }
-    
-    function loadPhotos() {
-        const category = categoryFilter ? categoryFilter.value : '';
-        let url = '/api/admin/public/photos';
-        if (category) {
-            url += `?category=${category}`;
+    function loadPhotos() {t
+        let url = '/api/admin/photos';
+        if (gallery) {
+            gallery.innerHTML = '<div class="loading-placeholder"><div class="loading-spinner"></div><p>Loading portfolio...</p></div>';
         }
         
-        if (gallery) {
-            gallery.innerHTML = '<div class="loading">Loading photos...</div>';
-        }
+        console.log('Fetching photos from:', url);
         
         fetch(url)
             .then(response => {
+                console.log('Response status:', response.status);
                 if (!response.ok) {
-                    throw new Error('Network response was not ok');
+                    throw new Error(`HTTP error! status: ${response.status}`);
                 }
                 return response.json();
             })
             .then(data => {
+                console.log('Photos data received:', data);
                 if (data.success && gallery) {
                     displayPhotos(data.photos);
                 } else {
@@ -436,7 +430,7 @@ document.addEventListener('DOMContentLoaded', function() {
             .catch(error => {
                 console.error('Error loading photos:', error);
                 if (gallery) {
-                    gallery.innerHTML = '<div class="error">Failed to load photos. Please try again later.</div>';
+                    gallery.innerHTML = '<div class="error">Failed to load photos. Please try again later. <br>Error: ' + error.message + '</div>';
                 }
             });
     }
@@ -444,53 +438,87 @@ document.addEventListener('DOMContentLoaded', function() {
     function displayPhotos(photos) {
         if (!gallery) return;
         
-        if (photos.length === 0) {
-            gallery.innerHTML = '<div class="no-photos">No photos found in this category</div>';
+        if (!photos || photos.length === 0) {
+            gallery.innerHTML = '<div class="no-photos">No photos found. Check back soon!</div>';
             return;
         }
         
         gallery.innerHTML = '';
         
         photos.forEach(photo => {
-            const photoItem = document.createElement('div');
-            photoItem.className = 'photo-item';
+            // Only display active photos
+            if (photo.is_active === false) return;
             
-            // Log the filepath for debugging
-            console.log('Photo filepath:', photo.filepath);
+            const galleryItem = document.createElement('div');
+            galleryItem.className = 'gallery-item';
             
-            photoItem.innerHTML = `
-                <img src="${photo.filepath}" alt="${photo.caption || 'Photo'}" loading="lazy" 
-                     onerror="this.src='https://via.placeholder.com/300x200?text=Image+Not+Found'; this.onerror=null;">
-                ${photo.caption ? `<div class="photo-caption">${photo.caption}</div>` : ''}
-            `;
-            gallery.appendChild(photoItem);
+            // Create image element
+            const img = document.createElement('img');
+            
+            // Fix the image path - ensure it's absolute
+            let imageSrc = photo.filepath || photo.file_path || '';
+            
+            // If path is relative, make it absolute
+            if (imageSrc && !imageSrc.startsWith('http') && !imageSrc.startsWith('/')) {
+                imageSrc = '/' + imageSrc;
+            }
+            
+            img.src = imageSrc;
+            img.alt = photo.caption || photo.filename || 'Designer Dress';
+            img.loading = 'lazy';
+            
+            // Add error handler for broken images
+            img.onerror = function() {
+                console.error('Failed to load image:', imageSrc);
+                this.src = 'https://via.placeholder.com/300x400?text=Image+Not+Found';
+                this.onerror = null;
+            };
+            
+            // Add click handler to open modal (if you want that functionality)
+            img.onclick = function() {
+                openModal(imageSrc, photo.caption || '');
+            };
+            
+            galleryItem.appendChild(img);
+            
+            // Add caption if exists
+            if (photo.caption) {
+                const caption = document.createElement('div');
+                caption.className = 'caption';
+                caption.textContent = photo.caption;
+                galleryItem.appendChild(caption);
+            }
+            
+            gallery.appendChild(galleryItem);
         });
     }
+    
+    // Modal functions (if you want to keep the modal functionality)
+    function openModal(src, caption) {
+        const modal = document.getElementById('modal');
+        const modalImage = document.getElementById('modalImage');
+        const modalOverlay = document.getElementById('modalOverlay');
+        
+        if (modal && modalImage) {
+            modalImage.src = src;
+            modal.style.display = 'flex';
+            
+            if (modalOverlay && caption) {
+                modalOverlay.textContent = caption;
+            }
+        }
+    }
+    
+    // Make openModal globally available
+    window.openModal = openModal;
+    
+    function closeModal() {
+        const modal = document.getElementById('modal');
+        if (modal) {
+            modal.style.display = 'none';
+        }
+    }
+    
+    // Make closeModal globally available
+    window.closeModal = closeModal;
 });
-
-// Manual test function (run in browser console)
-window.testBooking = function() {
-    const testData = {
-        firstName: "Test",
-        familyName: "User",
-        phone: "1234567890",
-        date: new Date(Date.now() + 86400000).toISOString().split('T')[0], // Tomorrow
-        time: "10:00"
-    };
-    
-    console.log('Testing booking with:', testData);
-    
-    fetch('/api/book-appointment', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(testData)
-    })
-    .then(response => {
-        console.log('Response status:', response.status);
-        return response.json();
-    })
-    .then(data => console.log('Response:', data))
-    .catch(error => console.error('Error:', error));
-};

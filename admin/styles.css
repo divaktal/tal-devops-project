@@ -823,3 +823,188 @@ tbody tr:hover {
     font-weight: bold;
     color: #2c3e50;
 }
+/* Add these styles to your existing styles.css */
+
+/* Notification styles */
+.notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 10000;
+    min-width: 300px;
+    max-width: 400px;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+    from { transform: translateX(100%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+}
+
+.notification-content {
+    padding: 15px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.notification-success {
+    background: #4CAF50;
+    color: white;
+    border-left: 4px solid #388E3C;
+}
+
+.notification-error {
+    background: #F44336;
+    color: white;
+    border-left: 4px solid #D32F2F;
+}
+
+.notification-warning {
+    background: #FF9800;
+    color: white;
+    border-left: 4px solid #F57C00;
+}
+
+.notification-info {
+    background: #2196F3;
+    color: white;
+    border-left: 4px solid #1976D2;
+}
+
+.notification button {
+    background: transparent;
+    border: none;
+    color: white;
+    font-size: 20px;
+    cursor: pointer;
+    margin-left: 10px;
+    padding: 0;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+}
+
+.notification button:hover {
+    background: rgba(255,255,255,0.2);
+}
+
+/* Form row for inline form groups */
+.form-row {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 15px;
+}
+
+.form-row .form-group {
+    flex: 1;
+}
+
+/* Timeline styles (add if not already present) */
+.timeline-container {
+    max-width: 800px;
+    margin: 20px auto;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.timeline-header {
+    background: #2c3e50;
+    color: white;
+    padding: 15px;
+    font-weight: bold;
+    text-align: center;
+}
+
+.timeline-item {
+    display: flex;
+    align-items: center;
+    padding: 12px 15px;
+    border-bottom: 1px solid #eee;
+}
+
+.timeline-item:nth-child(even) {
+    background: #f9f9f9;
+}
+
+.timeline-time {
+    width: 80px;
+    font-weight: bold;
+    color: #2c3e50;
+}
+
+.timeline-slot {
+    flex: 1;
+    padding: 8px 12px;
+    border-radius: 4px;
+    margin: 0 10px;
+}
+
+.timeline-slot.available {
+    background: #e8f5e9;
+    border-left: 4px solid #4caf50;
+}
+
+.timeline-slot.booked {
+    background: #fff3e0;
+    border-left: 4px solid #ff9800;
+}
+
+.timeline-slot.blocked {
+    background: #ffebee;
+    border-left: 4px solid #f44336;
+}
+
+.appointment-details {
+    font-size: 14px;
+}
+
+.appointment-details strong {
+    color: #333;
+}
+
+.blocked-reason {
+    color: #d32f2f;
+    font-style: italic;
+}
+
+.timeline-actions {
+    width: 100px;
+    text-align: right;
+}
+
+/* Summary cards */
+.summary-cards {
+    display: flex;
+    gap: 15px;
+    margin: 20px 0;
+}
+
+.card {
+    flex: 1;
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    text-align: center;
+}
+
+.card h3 {
+    margin: 0 0 10px 0;
+    color: #666;
+    font-size: 14px;
+}
+
+.card p {
+    margin: 0;
+    font-size: 24px;
+    font-weight: bold;
+    color: #2c3e50;
+}

@@ -249,7 +249,7 @@
                             <option value="evening">Evening Wear</option>
                             <option value="casual">Casual</option>
                         </select>
-                        <button class="btn-primary" onclick="admin.showUploadPage()">
+                        <button class="btn-primary" onclick="admin.modules.photos.showUploadPage()">
                             <i class="fas fa-plus"></i> Add Photo
                         </button>
                     </div>
@@ -264,8 +264,8 @@
                 <div class="page-header">
                     <h2>Appointment Management</h2>
                     <div class="page-actions">
-                        <input type="date" id="appointmentDateFilter" onchange="admin.loadAppointments()">
-                        <button class="btn-secondary" onclick="admin.exportAppointments()">
+                        <input type="date" id="appointmentDateFilter" onchange="admin.modules.appointments.loadAppointments()">
+                        <button class="btn-secondary" onclick="admin.modules.backup.exportAppointments()">
                             <i class="fas fa-file-export"></i> Export CSV
                         </button>
                     </div>
@@ -329,7 +329,7 @@
                 <div class="page-header">
                     <h2>Blocked Time Slots Management</h2>
                     <div class="page-actions">
-                        <button class="btn-primary" onclick="admin.showBlockForm()">
+                        <button class="btn-primary" onclick="admin.modules.blockslots.showBlockForm()">
                             <i class="fas fa-plus"></i> Add Block
                         </button>
                     </div>
@@ -418,7 +418,7 @@
                         </div>
                         
                         <div class="form-actions">
-                            <button type="button" class="btn-secondary" onclick="admin.hideBlockForm()">
+                            <button type="button" class="btn-secondary" onclick="admin.modules.blockslots.hideBlockForm()">
                                 Cancel
                             </button>
                             <button type="submit" class="btn-primary">
@@ -433,7 +433,8 @@
                     <table id="blockedSlotsTable">
                         <thead>
                             <tr>
-                                <th>Date</th>
+                                <th>Start Date</th>
+                                <th>End Date</th>
                                 <th>Time</th>
                                 <th>Reason</th>
                                 <th>Type</th>
@@ -454,7 +455,7 @@
                     <div class="page-actions">
                         <label for="scheduleDate" style="font-weight: 500; margin-right: 10px;">Select Date:</label>
                         <input type="date" id="scheduleDate" value="" style="padding: 8px 12px; border: 2px solid #e1e5e9; border-radius: 6px;">
-                        <button class="btn-primary" onclick="admin.loadTodaySchedule()" style="padding: 8px 16px;">
+                        <button class="btn-primary" onclick="admin.modules.schedule.loadTodaySchedule()" style="padding: 8px 16px;">
                             <i class="fas fa-calendar-day"></i> Today
                         </button>
                     </div>
@@ -488,12 +489,12 @@
                 <div class="backup-container">
                     <h2>Database Management</h2>
                     <div class="backup-actions">
-                        <div class="backup-card" onclick="admin.backupDatabase()">
+                        <div class="backup-card" onclick="admin.modules.backup.backupDatabase()">
                             <i class="fas fa-download"></i>
                             <h3>Download Backup</h3>
                             <p>Download complete database backup as JSON</p>
                         </div>
-                        <div class="backup-card" onclick="admin.exportAppointmentsCSV()">
+                        <div class="backup-card" onclick="admin.modules.backup.exportAppointmentsCSV()">
                             <i class="fas fa-file-csv"></i>
                             <h3>Export Appointments</h3>
                             <p>Export all appointments as CSV file</p>
@@ -530,7 +531,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h3>Edit Photo</h3>
-                <button class="modal-close" onclick="admin.closeModal()">&times;</button>
+                <button class="modal-close" onclick="admin.modules.ui.closeModal('photoModal')">&times;</button>
             </div>
             <div class="modal-body">
                 <form id="editPhotoForm">
@@ -559,7 +560,7 @@
                         </label>
                     </div>
                     <div class="modal-actions">
-                        <button type="button" class="btn-secondary" onclick="admin.closeModal()">Cancel</button>
+                        <button type="button" class="btn-secondary" onclick="admin.modules.ui.closeModal('photoModal')">Cancel</button>
                         <button type="submit" class="btn-primary">Save Changes</button>
                     </div>
                 </form>
@@ -567,6 +568,15 @@
         </div>
     </div>
 
+    <!-- Include all JavaScript files -->
+    <script src="/admin/admin-ui.js"></script>
+    <script src="/admin/admin-dashboard.js"></script>
+    <script src="/admin/admin-photos.js"></script>
+    <script src="/admin/admin-appointments.js"></script>
+    <script src="/admin/admin-blockslots.js"></script>
+    <script src="/admin/admin-schedule.js"></script>
+    <script src="/admin/admin-upload.js"></script>
+    <script src="/admin/admin-backup.js"></script>
     <script src="/admin/admin.js"></script>
 </body>
 </html>
