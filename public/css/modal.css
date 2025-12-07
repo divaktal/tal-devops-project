@@ -1,0 +1,294 @@
+/* ============================================
+   NOTIFICATIONS - Toast Notifications
+   ============================================ */
+
+.notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 10000;
+    min-width: 300px;
+    max-width: 400px;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    animation: slideIn 0.3s ease;
+}
+
+.notification-content {
+    padding: 15px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.notification-success {
+    background: #4CAF50;
+    color: white;
+    border-left: 4px solid #388E3C;
+}
+
+.notification-error {
+    background: #F44336;
+    color: white;
+    border-left: 4px solid #D32F2F;
+}
+
+.notification-warning {
+    background: #FF9800;
+    color: white;
+    border-left: 4px solid #F57C00;
+}
+
+.notification-info {
+    background: #2196F3;
+    color: white;
+    border-left: 4px solid #1976D2;
+}
+
+.notification button {
+    background: transparent;
+    border: none;
+    color: white;
+    font-size: 20px;
+    cursor: pointer;
+    margin-left: 10px;
+    padding: 0;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    font-family: 'Inter', sans-serif;
+}
+
+.notification button:hover {
+    background: rgba(255,255,255,0.2);
+}
+
+/* ============================================
+   BEAUTIFUL CONFIRMATION MODAL
+   ============================================ */
+
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+    animation: fadeIn 0.2s ease;
+}
+
+.modal.hidden {
+    display: none;
+}
+
+.modal-content {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+    overflow: hidden;
+    animation: modalSlideIn 0.3s ease;
+    max-width: 90%;
+    width: 420px;
+}
+
+@keyframes modalSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-20px) scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.modal-header {
+    padding: 20px 24px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modal-header h3 {
+    font-size: 18px;
+    font-weight: 600;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.modal-header h3 i {
+    font-size: 20px;
+}
+
+.modal-close {
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    color: white;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 18px;
+    transition: background 0.2s;
+}
+
+.modal-close:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+.modal-body {
+    padding: 30px 24px;
+    text-align: center;
+}
+
+.confirmation-icon {
+    margin-bottom: 20px;
+}
+
+.confirmation-icon i {
+    font-size: 64px;
+    display: block;
+    margin: 0 auto;
+}
+
+.icon-warning {
+    color: #FF9800;
+}
+
+.icon-danger {
+    color: #F44336;
+}
+
+.icon-success {
+    color: #4CAF50;
+}
+
+.icon-info {
+    color: #2196F3;
+}
+
+#confirmationMessage {
+    font-size: 16px;
+    line-height: 1.6;
+    color: #4a5568;
+    margin-bottom: 10px;
+}
+
+.confirmation-details {
+    font-size: 14px;
+    color: #718096;
+    margin-top: 10px;
+    font-style: italic;
+}
+
+.modal-actions {
+    padding: 20px 24px;
+    background: #f7fafc;
+    border-top: 1px solid #e2e8f0;
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+}
+
+/* Beautiful Buttons */
+.btn-secondary {
+    background: white;
+    color: #4a5568;
+    padding: 10px 24px;
+    border-radius: 8px;
+    border: 1px solid #cbd5e0;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.2s;
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+}
+
+.btn-secondary:hover {
+    background: #f7fafc;
+    border-color: #a0aec0;
+    transform: translateY(-1px);
+}
+
+.btn-danger {
+    background: linear-gradient(135deg, #F44336 0%, #D32F2F 100%);
+    color: white;
+    padding: 10px 24px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.2s;
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    box-shadow: 0 4px 12px rgba(244, 67, 54, 0.2);
+}
+
+.btn-danger:hover {
+    background: linear-gradient(135deg, #D32F2F 0%, #C21807 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(244, 67, 54, 0.3);
+}
+
+.btn-danger:active {
+    transform: translateY(0);
+}
+
+.btn-danger i {
+    margin-right: 6px;
+}
+
+/* Delete-specific styling */
+.delete-preview {
+    margin: 20px 0;
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border-left: 4px solid #F44336;
+}
+
+.delete-preview h4 {
+    color: #2d3748;
+    margin: 0 0 8px 0;
+    font-size: 14px;
+}
+
+.delete-preview p {
+    color: #718096;
+    margin: 0;
+    font-size: 13px;
+}
+
+.photo-preview {
+    max-width: 120px;
+    margin: 15px auto;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.photo-preview img {
+    width: 100%;
+    height: auto;
+    display: block;
+}
+
+/* For smaller modals */
+.modal-sm .modal-content {
+    width: 380px;
+}

@@ -5,7 +5,7 @@ class SimpleAdmin {
         this.selectedFiles = [];
         console.log('Admin Panel Initialized');
         
-        // Initialize modules
+        // Initialize modules - DON'T create UIManager instance
         this.modules = {
             dashboard: new DashboardManager(this),
             photos: new PhotoManager(this),
@@ -14,7 +14,7 @@ class SimpleAdmin {
             schedule: new ScheduleManager(this),
             upload: new UploadManager(this),
             backup: new BackupManager(this),
-            ui: new UIManager(this)
+            ui: AdminUI  // Use the existing AdminUI object, not UIManager
         };
         
         this.init();
@@ -26,7 +26,7 @@ class SimpleAdmin {
     }
     
     bindEvents() {
-        // Navigation
+        // Navigation is handled by AdminUI, but we keep compatibility
         document.querySelectorAll('.nav-item').forEach(item => {
             item.addEventListener('click', (e) => {
                 e.preventDefault();
@@ -52,7 +52,8 @@ class SimpleAdmin {
     }
     
     navigateTo(page) {
-        this.modules.ui.updateNavigation(page);
+        // Use AdminUI to navigate
+        this.modules.ui.showPage(page);
         
         // Load page data
         switch(page) {
@@ -69,13 +70,16 @@ class SimpleAdmin {
                 this.modules.upload.setupFileUpload();
                 break;
             case 'blockedSlots':
-                this.modules.blockslots.loadBlockedSlotsPage();
+                this.modules.blockslots.loadBlockedSlots();
                 break;
             case 'schedule':
-                this.modules.schedule.loadSchedulePage();
+                // Set today's date by default
+                const today = new Date().toISOString().split('T')[0];
+                document.getElementById('scheduleDate').value = today;
+                this.modules.schedule.loadSchedule(today);
                 break;
             case 'backup':
-                this.modules.backup.loadBackupInfo();
+                this.modules.backup.loadDatabaseInfo();
                 break;
         }
     }
@@ -89,7 +93,10 @@ class SimpleAdmin {
             return await response.json();
         } catch (error) {
             console.error('Fetch error:', error);
-            this.modules.ui.showMessage('error', `Error: ${error.message}`);
+            // Use AdminUI's notification system
+            if (this.modules.ui && this.modules.ui.showError) {
+                this.modules.ui.showError(`Error: ${error.message}`);
+            }
             throw error;
         }
     }

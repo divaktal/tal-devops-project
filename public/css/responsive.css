@@ -1,0 +1,153 @@
+/* ============ MOBILE STYLES ============ */
+@media (max-width: 768px) {
+    /* Title Card */
+    .title-card h1 {
+        font-size: 48px;
+    }
+
+    .title-card p {
+        font-size: 16px;
+    }
+
+    /* Hero Section */
+    .hero h1 {
+        font-size: 28px;
+    }
+
+    .hero p {
+        font-size: 16px;
+    }
+
+    /* Navigation */
+    nav {
+        flex-direction: column;
+        padding: 10px 0;
+    }
+
+    nav a {
+        padding: 10px;
+        font-size: 14px;
+    }
+
+    /* Sections */
+    .hero, .services, .portfolio, .contact, .scheduling {
+        padding: 40px 20px;
+        width: 90%;
+    }
+
+    /* Gallery */
+    .gallery {
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 15px;
+    }
+
+    .gallery-item {
+        height: 250px;
+    }
+
+    /* Modal */
+    .modal-content {
+        width: 100vw;
+        height: 100vh;
+    }
+    
+    .modal-image-container {
+        padding: 10px;
+    }
+    
+    .modal-content img {
+        width: 100% !important;
+        height: auto !important;
+        max-width: 95vw !important;
+        max-height: 70vh !important;
+        border: 10px solid rgba(255, 255, 255, 0.1);
+        opacity: 0.9;
+    }
+    
+    .modal-close {
+        top: 15px;
+        right: 15px;
+        width: 50px;
+        height: 50px;
+        font-size: 24px;
+    }
+    
+    .modal-prev, .modal-next {
+        width: 50px;
+        height: 50px;
+        font-size: 24px;
+    }
+    
+    .modal-caption {
+        padding: 10px 15px;
+        font-size: 16px;
+    }
+
+    /* Chat */
+    .chat-window {
+        width: 90%;
+        right: 5%;
+    }
+
+    .chat-toggle {
+        right: 5%;
+    }
+
+    /* Scheduling */
+    .scheduling h2 {
+        font-size: 32px;
+    }
+    
+    .form-row {
+        flex-direction: column;
+        gap: 15px;
+    }
+    
+    .form-group input,
+    .form-group select {
+        width: 100%;
+    }
+    
+    .submit-btn {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+/* ============ TABLET STYLES ============ */
+@media (min-width: 769px) and (max-width: 1024px) {
+    .title-card h1 {
+        font-size: 60px;
+    }
+
+    .hero h1 {
+        font-size: 32px;
+    }
+
+    .gallery {
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    }
+    
+    .gallery-item {
+        height: 280px;
+    }
+    
+    .modal-content img {
+        width: 800px !important;
+        height: 1000px !important;
+        max-width: 85vw !important;
+        max-height: 75vh !important;
+        opacity: 0.85;
+    }
+}
+
+/* ============ DESKTOP LARGE ============ */
+@media (min-width: 1200px) {
+    .gallery {
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    }
+    
+    .gallery-item {
+        height: 350px;
+    }
+}

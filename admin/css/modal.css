@@ -1,0 +1,157 @@
+/* ============================================
+   NOTIFICATIONS - Toast Notifications
+   ============================================ */
+
+.notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 10000;
+    min-width: 300px;
+    max-width: 400px;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    animation: slideIn 0.3s ease;
+}
+
+.notification-content {
+    padding: 15px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.notification-success {
+    background: #4CAF50;
+    color: white;
+    border-left: 4px solid #388E3C;
+}
+
+.notification-error {
+    background: #F44336;
+    color: white;
+    border-left: 4px solid #D32F2F;
+}
+
+.notification-warning {
+    background: #FF9800;
+    color: white;
+    border-left: 4px solid #F57C00;
+}
+
+.notification-info {
+    background: #2196F3;
+    color: white;
+    border-left: 4px solid #1976D2;
+}
+
+.notification button {
+    background: transparent;
+    border: none;
+    color: white;
+    font-size: 20px;
+    cursor: pointer;
+    margin-left: 10px;
+    padding: 0;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    font-family: 'Inter', sans-serif;
+}
+
+.notification button:hover {
+    background: rgba(255,255,255,0.2);
+}
+
+/* ============================================
+   CONFIRMATION MODAL STYLES
+   ============================================ */
+
+.modal-sm {
+    max-width: 400px;
+}
+
+.confirmation-icon {
+    text-align: center;
+    margin-bottom: 20px;
+    font-size: 48px;
+    color: #FF9800;
+}
+
+.modal-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid #e2e8f0;
+}
+
+/* Danger button for destructive actions */
+.btn-danger {
+    background: #F44336;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    font-weight: 500;
+    transition: background 0.2s;
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+}
+
+.btn-danger:hover {
+    background: #D32F2F;
+}
+
+/* Confirmation message styling */
+#confirmationMessage {
+    text-align: center;
+    font-size: 16px;
+    color: #4a5568;
+    line-height: 1.5;
+    margin: 0;
+}
+
+.modal {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    background: rgba(0, 0, 0, 0.5) !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    z-index: 10000 !important;
+}
+
+.modal.hidden {
+    display: none !important;
+}
+
+.modal-content {
+    background: white;
+    border-radius: 8px;
+    padding: 0;
+    max-width: 500px;
+    width: 90%;
+    max-height: 90vh;
+    overflow-y: auto;
+    margin: auto !important;
+    position: relative !important;
+}
+
+.modal-sm {
+    max-width: 400px !important;
+}
+
+/* Confirmation modal specific */
+#confirmationModal .modal-content {
+    max-width: 400px;
+}

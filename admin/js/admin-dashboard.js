@@ -55,7 +55,7 @@ class DashboardManager {
                 <td>${new Date(apt.date).toLocaleDateString()}</td>
                 <td>${apt.time.substring(0, 5)}</td>
                 <td>
-                    <button class="btn-delete-sm" onclick="admin.modules.appointments.deleteAppointment(${apt.id})">
+                    <button class="btn-delete-sm" onclick="admin.modules.appointments.confirmDeleteAppointment(${apt.id})">
                         Delete
                     </button>
                 </td>
@@ -95,7 +95,7 @@ class DashboardManager {
                 <td>${timeInfo}</td>
                 <td>${slot.reason || 'No reason'}</td>
                 <td>
-                    <button class="btn-delete-sm" onclick="admin.modules.blockslots.deleteBlockedSlot(${slot.id})">
+                    <button class="btn-delete-sm" onclick="admin.modules.blockslots.confirmDeleteBlockedSlot(${slot.id})">
                         Delete
                     </button>
                 </td>

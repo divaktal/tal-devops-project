@@ -24,7 +24,11 @@ class PhotoManager {
         } catch (error) {
             console.error('Failed to load photos:', error);
             grid.innerHTML = '<p>Error loading photos</p>';
-            this.admin.modules.ui.showMessage('error', 'Failed to load photos');
+            if (this.admin.modules.ui && this.admin.modules.ui.showError) {
+                this.admin.modules.ui.showError('Failed to load photos');
+            } else {
+                alert('Failed to load photos');
+            }
         }
     }
     
@@ -40,18 +44,33 @@ class PhotoManager {
         grid.innerHTML = '';
         
         photos.forEach(photo => {
+            console.log('Photo data:', photo); // DEBUG LINE
+            
             const card = document.createElement('div');
             card.className = 'photo-card';
+            
+            // TEST if image loads
+            const img = new Image();
+            img.onload = function() {
+                console.log('Image loaded successfully:', photo.filepath);
+            };
+            img.onerror = function() {
+                console.error('Failed to load image:', photo.filepath);
+            };
+            img.src = photo.filepath;
+            
             card.innerHTML = `
-                <img src="${photo.filepath}" alt="${photo.caption || 'Photo'}" loading="lazy">
+                <img src="${photo.filepath}" alt="${photo.caption || 'Photo'}" loading="lazy"
+                     onerror="console.error('Image failed to load:', this.src)">
                 <div class="photo-info">
                     <h4>${photo.caption || photo.original_name || photo.filename}</h4>
                     <p>Category: ${photo.category}</p>
+                    <p>Path: ${photo.filepath}</p> <!-- DEBUG LINE -->
                     <div class="photo-actions">
                         <button class="btn-primary" onclick="admin.modules.photos.editPhoto(${photo.id})">
                             <i class="fas fa-edit"></i> Edit
                         </button>
-                        <button class="btn-delete-sm" onclick="admin.modules.photos.deletePhoto(${photo.id})">
+                        <button class="btn-delete-sm" onclick="admin.modules.photos.confirmDeletePhoto(${photo.id})">
                             <i class="fas fa-trash"></i> Delete
                         </button>
                     </div>
@@ -78,7 +97,11 @@ class PhotoManager {
             }
         } catch (error) {
             console.error('Failed to load photo:', error);
-            this.admin.modules.ui.showMessage('error', 'Failed to load photo details');
+            if (this.admin.modules.ui && this.admin.modules.ui.showError) {
+                this.admin.modules.ui.showError('Failed to load photo details');
+            } else {
+                alert('Failed to load photo details');
+            }
         }
     }
     
@@ -104,39 +127,76 @@ class PhotoManager {
             const data = await response.json();
             
             if (response.ok) {
-                this.admin.modules.ui.showMessage('success', 'Photo updated successfully!');
+                if (this.admin.modules.ui && this.admin.modules.ui.showSuccess) {
+                    this.admin.modules.ui.showSuccess('Photo updated successfully!');
+                } else {
+                    alert('Photo updated successfully!');
+                }
                 this.admin.modules.ui.closeModal('photoModal');
                 this.loadPhotos();
-                this.admin.modules.dashboard.loadDashboard();
+                if (this.admin.modules.dashboard && this.admin.modules.dashboard.loadDashboard) {
+                    this.admin.modules.dashboard.loadDashboard();
+                }
             } else {
-                this.admin.modules.ui.showMessage('error', data.error || 'Failed to update photo');
+                if (this.admin.modules.ui && this.admin.modules.ui.showError) {
+                    this.admin.modules.ui.showError(data.error || 'Failed to update photo');
+                } else {
+                    alert(data.error || 'Failed to update photo');
+                }
             }
         } catch (error) {
             console.error('Failed to update photo:', error);
-            this.admin.modules.ui.showMessage('error', 'Failed to update photo');
+            if (this.admin.modules.ui && this.admin.modules.ui.showError) {
+                this.admin.modules.ui.showError('Failed to update photo');
+            } else {
+                alert('Failed to update photo');
+            }
         }
     }
     
-    async deletePhoto(id) {
-        if (!confirm('Are you sure you want to delete this photo?')) {
-            return;
-        }
+    async confirmDeletePhoto(id) {
+        const confirmed = await this.admin.modules.ui.confirm(
+            'Are you sure you want to delete this photo?',
+            () => this.deletePhoto(id),
+            'danger',
+            {
+                details: 'This action cannot be undone.'
+            }
+        );
         
+        return confirmed;
+    }
+    
+    async deletePhoto(id) {
         try {
             const response = await fetch(`${this.admin.apiBase}/photos/${id}`, {
                 method: 'DELETE'
             });
             
             if (response.ok) {
-                this.admin.modules.ui.showMessage('success', 'Photo deleted successfully!');
+                if (this.admin.modules.ui && this.admin.modules.ui.showSuccess) {
+                    this.admin.modules.ui.showSuccess('Photo deleted successfully!');
+                } else {
+                    alert('Photo deleted successfully!');
+                }
                 this.loadPhotos();
-                this.admin.modules.dashboard.loadDashboard();
+                if (this.admin.modules.dashboard && this.admin.modules.dashboard.loadDashboard) {
+                    this.admin.modules.dashboard.loadDashboard();
+                }
             } else {
-                this.admin.modules.ui.showMessage('error', 'Failed to delete photo');
+                if (this.admin.modules.ui && this.admin.modules.ui.showError) {
+                    this.admin.modules.ui.showError('Failed to delete photo');
+                } else {
+                    alert('Failed to delete photo');
+                }
             }
         } catch (error) {
             console.error('Failed to delete photo:', error);
-            this.admin.modules.ui.showMessage('error', 'Failed to delete photo');
+            if (this.admin.modules.ui && this.admin.modules.ui.showError) {
+                this.admin.modules.ui.showError('Failed to delete photo');
+            } else {
+                alert('Failed to delete photo');
+            }
         }
     }
     

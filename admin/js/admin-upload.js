@@ -3,6 +3,7 @@ class UploadManager {
     constructor(admin) {
         this.admin = admin;
         this.selectedFiles = [];
+        this.uploadFormListener = null; // Track the listener
     }
     
     setupFileUpload() {
@@ -13,54 +14,73 @@ class UploadManager {
         
         if (!dropArea || !fileInput || !preview || !uploadForm) return;
         
-        // Reset form
+        // Reset form and files
         this.selectedFiles = [];
         preview.innerHTML = '';
         
+        // remove old form listeners  
+        dropArea.replaceWith(dropArea.cloneNode(true));
+        fileInput.replaceWith(fileInput.cloneNode(true));
+        
+        const newDropArea = document.getElementById('dropArea');
+        const newFileInput = document.getElementById('fileInput');
+        const newUploadForm = document.getElementById('uploadForm');
+        
         // Click to select files
-        dropArea.addEventListener('click', () => {
-            fileInput.click();
+        newDropArea.addEventListener('click', () => {
+            newFileInput.click();
         });
         
         // Drag and drop
-        dropArea.addEventListener('dragover', (e) => {
+        newDropArea.addEventListener('dragover', (e) => {
             e.preventDefault();
-            dropArea.style.borderColor = '#4299e1';
-            dropArea.style.background = '#f7fafc';
+            newDropArea.style.borderColor = '#4299e1';
+            newDropArea.style.background = '#f7fafc';
         });
         
-        dropArea.addEventListener('dragleave', () => {
-            dropArea.style.borderColor = '#cbd5e0';
-            dropArea.style.background = 'white';
+        newDropArea.addEventListener('dragleave', () => {
+            newDropArea.style.borderColor = '#cbd5e0';
+            newDropArea.style.background = 'white';
         });
         
-        dropArea.addEventListener('drop', (e) => {
+        newDropArea.addEventListener('drop', (e) => {
             e.preventDefault();
-            dropArea.style.borderColor = '#cbd5e0';
-            dropArea.style.background = 'white';
+            newDropArea.style.borderColor = '#cbd5e0';
+            newDropArea.style.background = 'white';
             
             const files = Array.from(e.dataTransfer.files);
             this.handleFiles(files);
         });
         
         // File input change
-        fileInput.addEventListener('change', (e) => {
+        newFileInput.addEventListener('change', (e) => {
             const files = Array.from(e.target.files);
             this.handleFiles(files);
         });
         
-        // Upload form submission
-        uploadForm.addEventListener('submit', (e) => {
+        // REMOVE OLD FORM LISTENER IF EXISTS
+        if (this.uploadFormListener) {
+            newUploadForm.removeEventListener('submit', this.uploadFormListener);
+        }
+        
+        // Add new form listener
+        this.uploadFormListener = (e) => {
             e.preventDefault();
             this.uploadPhotos();
-        });
+        };
+        newUploadForm.addEventListener('submit', this.uploadFormListener);
     }
     
     handleFiles(files) {
         const imageFiles = files.filter(file => file.type.startsWith('image/'));
         
         if (imageFiles.length === 0) {
-            this.admin.modules.ui.showMessage('error', 'Please select only image files (JPEG, PNG, GIF, WebP)');
+            // Use showError instead of showMessage
+            if (this.admin.modules.ui && this.admin.modules.ui.showError) {
+                this.admin.modules.ui.showError('Please select only image files (JPEG, PNG, GIF, WebP)');
+            } else {
+                alert('Please select only image files (JPEG, PNG, GIF, WebP)');
+            }
             return;
         }
         
@@ -90,6 +110,23 @@ class UploadManager {
             reader.readAsDataURL(file);
         });
     }
+
+    validateImageQuality(file) {
+        return new Promise((resolve) => {
+            const img = new Image();
+            img.onload = function() {
+                const isHighQuality = this.naturalWidth >= 800 && this.naturalHeight >= 600;
+                resolve({
+                    file,
+                    width: this.naturalWidth,
+                    height: this.naturalHeight,
+                    isHighQuality
+                });
+            };
+            img.onerror = () => resolve({ file, isHighQuality: false });
+            img.src = URL.createObjectURL(file);
+        });
+    }
     
     removeFile(index) {
         this.selectedFiles.splice(index, 1);
@@ -98,7 +135,12 @@ class UploadManager {
     
     async uploadPhotos() {
         if (this.selectedFiles.length === 0) {
-            this.admin.modules.ui.showMessage('error', 'Please select at least one photo to upload');
+            // Use showError instead of showMessage
+            if (this.admin.modules.ui && this.admin.modules.ui.showError) {
+                this.admin.modules.ui.showError('Please select at least one photo to upload');
+            } else {
+                alert('Please select at least one photo to upload');
+            }
             return;
         }
         
@@ -144,11 +186,35 @@ class UploadManager {
         document.getElementById('uploadForm').reset();
         
         if (uploadedCount > 0) {
-            this.admin.modules.ui.showMessage('success', `Successfully uploaded ${uploadedCount} photo(s)!`);
-            this.admin.modules.photos.loadPhotos();
-            this.admin.modules.dashboard.loadDashboard();
+            // Use showSuccess instead of showMessage
+            if (this.admin.modules.ui && this.admin.modules.ui.showSuccess) {
+                this.admin.modules.ui.showSuccess(`Successfully uploaded ${uploadedCount} photo(s)!`);
+            } else {
+                alert(`Successfully uploaded ${uploadedCount} photo(s)!`);
+            }
+            
+            // Load photos and refresh dashboard
+            if (this.admin.modules.photos && this.admin.modules.photos.loadPhotos) {
+                this.admin.modules.photos.loadPhotos();
+            }
+            
+            if (this.admin.modules.dashboard && this.admin.modules.dashboard.loadDashboard) {
+                this.admin.modules.dashboard.loadDashboard();
+            }
+            
+            // REDIRECT TO PHOTOS PAGE
+            setTimeout(() => {
+                if (this.admin.modules.ui && this.admin.modules.ui.showPage) {
+                    this.admin.modules.ui.showPage('photos');
+                }
+            }, 1);
+            
         } else {
-            this.admin.modules.ui.showMessage('error', 'No photos were uploaded. Please try again.');
+            if (this.admin.modules.ui && this.admin.modules.ui.showError) {
+                this.admin.modules.ui.showError('No photos were uploaded. Please try again.');
+            } else {
+                alert('No photos were uploaded. Please try again.');
+            }
         }
     }
 }
