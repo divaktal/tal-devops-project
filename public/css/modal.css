@@ -1,108 +1,48 @@
 /* ============================================
-   NOTIFICATIONS - Toast Notifications
+   PHOTO MODAL STYLES - TINDER-STYLE
    ============================================ */
 
-.notification {
-    position: fixed;
-    top: 20px;
-    right: 20px;
-    z-index: 10000;
-    min-width: 300px;
-    max-width: 400px;
-    border-radius: 8px;
-    overflow: hidden;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-    animation: slideIn 0.3s ease;
-}
-
-.notification-content {
-    padding: 15px 20px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.notification-success {
-    background: #4CAF50;
-    color: white;
-    border-left: 4px solid #388E3C;
-}
-
-.notification-error {
-    background: #F44336;
-    color: white;
-    border-left: 4px solid #D32F2F;
-}
-
-.notification-warning {
-    background: #FF9800;
-    color: white;
-    border-left: 4px solid #F57C00;
-}
-
-.notification-info {
-    background: #2196F3;
-    color: white;
-    border-left: 4px solid #1976D2;
-}
-
-.notification button {
-    background: transparent;
-    border: none;
-    color: white;
-    font-size: 20px;
-    cursor: pointer;
-    margin-left: 10px;
-    padding: 0;
-    width: 24px;
-    height: 24px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 50%;
-    font-family: 'Inter', sans-serif;
-}
-
-.notification button:hover {
-    background: rgba(255,255,255,0.2);
-}
-
-/* ============================================
-   BEAUTIFUL CONFIRMATION MODAL
-   ============================================ */
-
+/* Modal container */
 .modal {
     position: fixed;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0, 0, 0, 0.5);
-    display: flex;
+    background: rgba(0, 0, 0, 0.95);
+    display: none;
     align-items: center;
     justify-content: center;
-    z-index: 10000;
-    animation: fadeIn 0.2s ease;
+    z-index: 2000;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    backdrop-filter: blur(10px);
 }
 
-.modal.hidden {
-    display: none;
+.modal.open {
+    opacity: 1;
 }
 
+/* Tinder-style modal content - FIXED SIZE LIKE TINDER CARDS */
 .modal-content {
-    background: white;
-    border-radius: 12px;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+    background: transparent;
+    border-radius: 20px;
     overflow: hidden;
-    animation: modalSlideIn 0.3s ease;
-    max-width: 90%;
-    width: 420px;
+    width: 400px; /* Fixed width like Tinder cards */
+    height: 600px; /* Fixed height like Tinder cards */
+    max-width: 90vw;
+    max-height: 90vh;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 30px 80px rgba(0, 0, 0, 0.5);
+    aspect-ratio: 2/3; /* Standard Tinder card ratio */
 }
 
 @keyframes modalSlideIn {
     from {
         opacity: 0;
-        transform: translateY(-20px) scale(0.95);
+        transform: translateY(40px) scale(0.95);
     }
     to {
         opacity: 1;
@@ -110,185 +50,410 @@
     }
 }
 
+/* Modal header */
 .modal-header {
-    padding: 20px 24px;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    padding: 20px;
+    background: linear-gradient(to bottom, rgba(0, 0, 0, 0.9), transparent);
     color: white;
     display: flex;
     justify-content: space-between;
     align-items: center;
+    z-index: 10;
 }
 
 .modal-header h3 {
-    font-size: 18px;
+    font-size: 20px;
     font-weight: 600;
     margin: 0;
     display: flex;
     align-items: center;
     gap: 10px;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
 }
 
 .modal-header h3 i {
-    font-size: 20px;
+    font-size: 22px;
 }
 
 .modal-close {
-    background: rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.15);
     border: none;
     color: white;
-    width: 32px;
-    height: 32px;
+    width: 40px;
+    height: 40px;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    font-size: 18px;
-    transition: background 0.2s;
+    font-size: 24px;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    z-index: 11;
 }
 
 .modal-close:hover {
     background: rgba(255, 255, 255, 0.3);
+    transform: rotate(90deg);
 }
 
+/* Modal body */
 .modal-body {
-    padding: 30px 24px;
-    text-align: center;
-}
-
-.confirmation-icon {
-    margin-bottom: 20px;
-}
-
-.confirmation-icon i {
-    font-size: 64px;
-    display: block;
-    margin: 0 auto;
-}
-
-.icon-warning {
-    color: #FF9800;
-}
-
-.icon-danger {
-    color: #F44336;
-}
-
-.icon-success {
-    color: #4CAF50;
-}
-
-.icon-info {
-    color: #2196F3;
-}
-
-#confirmationMessage {
-    font-size: 16px;
-    line-height: 1.6;
-    color: #4a5568;
-    margin-bottom: 10px;
-}
-
-.confirmation-details {
-    font-size: 14px;
-    color: #718096;
-    margin-top: 10px;
-    font-style: italic;
-}
-
-.modal-actions {
-    padding: 20px 24px;
-    background: #f7fafc;
-    border-top: 1px solid #e2e8f0;
+    padding: 0;
     display: flex;
-    gap: 12px;
-    justify-content: flex-end;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+    position: relative;
+    overflow: hidden;
 }
 
-/* Beautiful Buttons */
-.btn-secondary {
-    background: white;
-    color: #4a5568;
-    padding: 10px 24px;
-    border-radius: 8px;
-    border: 1px solid #cbd5e0;
-    cursor: pointer;
-    font-weight: 500;
-    transition: all 0.2s;
-    font-family: 'Inter', sans-serif;
-    font-size: 14px;
+/* Photo preview - FIXED CONTAINER */
+.photo-preview {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    background: #1a1a1a; /* Dark background for consistency */
 }
 
-.btn-secondary:hover {
-    background: #f7fafc;
-    border-color: #a0aec0;
-    transform: translateY(-1px);
+/* Tinder-style image - FIXED SIZE AND CROP */
+#modalImage {
+    width: 100%;
+    height: 100%;
+    object-fit: cover; /* Crop images to fit container */
+    object-position: center;
+    border-radius: 0; /* No border radius for full card look */
+    opacity: 0;
+    transition: all 0.3s ease;
+    cursor: grab;
+    user-select: none;
+    -webkit-user-drag: none;
 }
 
-.btn-danger {
-    background: linear-gradient(135deg, #F44336 0%, #D32F2F 100%);
+#modalImage:active {
+    cursor: grabbing;
+}
+
+@keyframes imageFadeIn {
+    to {
+        opacity: 1;
+    }
+}
+
+/* TINDER SWIPE ANIMATIONS */
+@keyframes swipeRight {
+    0% {
+        transform: translateX(0) rotate(0deg);
+        opacity: 1;
+    }
+    100% {
+        transform: translateX(200%) rotate(30deg);
+        opacity: 0;
+    }
+}
+
+@keyframes swipeLeft {
+    0% {
+        transform: translateX(0) rotate(0deg);
+        opacity: 1;
+    }
+    100% {
+        transform: translateX(-200%) rotate(-30deg);
+        opacity: 0;
+    }
+}
+
+@keyframes swipeUp {
+    0% {
+        transform: translateY(0) scale(1);
+        opacity: 1;
+    }
+    100% {
+        transform: translateY(-150%) scale(0.8);
+        opacity: 0;
+    }
+}
+
+.swipe-right {
+    animation: swipeRight 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+.swipe-left {
+    animation: swipeLeft 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+.swipe-up {
+    animation: swipeUp 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+/* Swipe direction indicators */
+.swipe-indicator {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 40px;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    z-index: 5;
+    pointer-events: none;
+}
+
+.swipe-indicator-left {
+    left: 20px;
+    color: #e74c3c;
+}
+
+.swipe-indicator-right {
+    right: 20px;
+    color: #2ecc71;
+}
+
+.swipe-indicator.show {
+    opacity: 0.7;
+}
+
+/* Caption - Positioned like Tinder */
+#modalCaption {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
     color: white;
-    padding: 10px 24px;
-    border-radius: 8px;
+    font-size: 16px;
+    text-align: center;
+    padding: 25px 20px;
+    background: linear-gradient(to top, rgba(0, 0, 0, 0.9), transparent);
+    backdrop-filter: blur(5px);
+    animation: fadeInUp 0.5s ease;
+    z-index: 2;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Navigation dots - Tinder style */
+.modal-dots-container {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    padding: 15px;
+    background: rgba(0, 0, 0, 0.5);
+    border-radius: 50px;
+    margin: 10px auto;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    max-width: fit-content;
+    animation: fadeInUp 0.5s ease;
+}
+
+.modal-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.3);
     border: none;
     cursor: pointer;
+    padding: 0;
+    transition: all 0.3s ease;
+}
+
+.modal-dot:hover {
+    background: rgba(255, 255, 255, 0.5);
+    transform: scale(1.3);
+}
+
+.modal-dot.active {
+    background: white;
+    transform: scale(1.3);
+    box-shadow: 0 0 8px rgba(255, 255, 255, 0.8);
+}
+
+/* Modal actions (navigation buttons) */
+.modal-actions {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    padding: 20px;
+    background: rgba(0, 0, 0, 0.5);
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    animation: fadeInUp 0.5s ease;
+}
+
+.modal-actions .btn-secondary {
+    background: rgba(255, 255, 255, 0.15);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    padding: 12px 25px;
+    border-radius: 30px;
+    cursor: pointer;
     font-weight: 500;
-    transition: all 0.2s;
+    transition: all 0.3s ease;
     font-family: 'Inter', sans-serif;
-    font-size: 14px;
-    box-shadow: 0 4px 12px rgba(244, 67, 54, 0.2);
+    font-size: 15px;
+    backdrop-filter: blur(5px);
+    display: flex;
+    align-items: center;
+    gap: 8px;
 }
 
-.btn-danger:hover {
-    background: linear-gradient(135deg, #D32F2F 0%, #C21807 100%);
-    transform: translateY(-1px);
-    box-shadow: 0 6px 16px rgba(244, 67, 54, 0.3);
+.modal-actions .btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.25);
+    transform: translateY(-2px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
 }
 
-.btn-danger:active {
+.modal-actions .btn-secondary:active {
     transform: translateY(0);
 }
 
-.btn-danger i {
-    margin-right: 6px;
+/* Responsive styles */
+@media (max-width: 768px) {
+    .modal-content {
+        width: 350px;
+        height: 525px;
+        max-width: 95vw;
+        max-height: 85vh;
+    }
+    
+    .modal-header {
+        padding: 15px;
+    }
+    
+    .modal-header h3 {
+        font-size: 16px;
+    }
+    
+    .modal-close {
+        width: 35px;
+        height: 35px;
+        font-size: 20px;
+    }
+    
+    #modalCaption {
+        font-size: 14px;
+        padding: 20px 15px;
+    }
+    
+    .modal-dots-container {
+        padding: 12px;
+        gap: 6px;
+    }
+    
+    .modal-dot {
+        width: 6px;
+        height: 6px;
+    }
+    
+    .modal-actions {
+        padding: 15px;
+        gap: 10px;
+    }
+    
+    .modal-actions .btn-secondary {
+        padding: 10px 20px;
+        font-size: 14px;
+    }
+    
+    .swipe-indicator {
+        font-size: 30px;
+    }
 }
 
-/* Delete-specific styling */
-.delete-preview {
-    margin: 20px 0;
-    padding: 15px;
-    background: #f8f9fa;
+@media (max-width: 480px) {
+    .modal-content {
+        width: 300px;
+        height: 450px;
+        max-width: 95vw;
+        max-height: 80vh;
+    }
+    
+    .modal-header h3 {
+        font-size: 14px;
+    }
+    
+    #modalCaption {
+        font-size: 13px;
+        padding: 18px 12px;
+    }
+    
+    .modal-actions {
+        flex-direction: row;
+        gap: 8px;
+    }
+    
+    .modal-actions .btn-secondary {
+        width: auto;
+        flex: 1;
+        justify-content: center;
+    }
+    
+    .swipe-indicator {
+        font-size: 25px;
+    }
+}
+
+/* Loading animation for images */
+.loading-image {
+    position: relative;
+    background: linear-gradient(90deg, #2c3e50 25%, #34495e 50%, #2c3e50 75%);
+    background-size: 200% 100%;
+    animation: loading 1.5s infinite;
     border-radius: 8px;
-    border-left: 4px solid #F44336;
 }
 
-.delete-preview h4 {
-    color: #2d3748;
-    margin: 0 0 8px 0;
-    font-size: 14px;
+@keyframes loading {
+    0% {
+        background-position: 200% 0;
+    }
+    100% {
+        background-position: -200% 0;
+    }
 }
 
-.delete-preview p {
-    color: #718096;
-    margin: 0;
-    font-size: 13px;
+/* Drag overlay effect */
+.drag-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.3);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+    z-index: 1;
 }
 
-.photo-preview {
-    max-width: 120px;
-    margin: 15px auto;
-    border-radius: 8px;
-    overflow: hidden;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+.drag-overlay.active {
+    opacity: 1;
 }
 
-.photo-preview img {
-    width: 100%;
-    height: auto;
-    display: block;
-}
-
-/* For smaller modals */
-.modal-sm .modal-content {
-    width: 380px;
+/* Modal backdrop click area */
+.modal::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: -1;
+    cursor: pointer;
 }

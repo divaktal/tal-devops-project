@@ -84,10 +84,9 @@ function updateTimeSelect(slots, selectedDate) {
     
     // Add options for valid slots
     validSlots.forEach(slot => {
-        const option = createElement('option', {
-            value: slot,
-            textContent: slot
-        });
+        const option = document.createElement('option');
+        option.value = slot;
+        option.textContent = slot;
         timeSelect.appendChild(option);
     });
     
@@ -196,18 +195,20 @@ async function submitBookingForm(e) {
             submitBtn.style.opacity = '1';
         }
         
-        if (data.success) {
-            // Show success message
-            const details = `
-                <div style="margin-top: 10px; padding: 10px; background: white; border-radius: 5px;">
-                    <p><strong>Date:</strong> ${new Date(date).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
-                    <p><strong>Time:</strong> ${time}</p>
-                    <p><strong>Name:</strong> ${firstName} ${familyName}</p>
-                    <p><strong>Phone:</strong> ${phone}</p>
-                </div>
-            `;
+        if (response.ok) {
+            // SUCCESS - Show only the bottom confirmation message
             
-            showSuccess('Appointment Booked Successfully!', details);
+            // Hide the top success message
+            const successDiv = document.getElementById('successMessage');
+            if (successDiv) {
+                successDiv.style.display = 'none';
+            }
+            
+            // Show the bottom confirmation message
+            const confirmation = document.getElementById('confirmationMessage');
+            if (confirmation) {
+                confirmation.style.display = 'block';
+            }
             
             // Reset form
             const bookingForm = document.getElementById('scheduleForm');
@@ -220,6 +221,13 @@ async function submitBookingForm(e) {
             if (timeSelect) {
                 timeSelect.innerHTML = '<option value="">Select a date first</option>';
                 timeSelect.disabled = true;
+            }
+            
+            // Reset date to today
+            const dateInput = document.getElementById('appointmentDate');
+            if (dateInput) {
+                const today = new Date().toISOString().split('T')[0];
+                dateInput.value = today;
             }
             
         } else {
@@ -264,35 +272,6 @@ function initBooking() {
     if (bookingForm) {
         bookingForm.addEventListener('submit', submitBookingForm);
     }
-    
-    // Test functions (for development)
-    window.testBooking = function() {
-        const testData = {
-            firstName: "Test",
-            familyName: "User",
-            phone: "1234567890",
-            date: new Date(Date.now() + 86400000).toISOString().split('T')[0],
-            time: "10:00"
-        };
-        
-        fetch('/api/book-appointment', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(testData)
-        })
-        .then(response => response.json())
-        .then(data => console.log('Test booking response:', data))
-        .catch(error => console.error('Test booking error:', error));
-    };
-    
-    window.testServer = function() {
-        fetch('/api/available-slots/2024-12-04')
-            .then(response => response.json())
-            .then(data => console.log('Server test response:', data))
-            .catch(err => console.error('Server test error:', err));
-    };
     
     console.log('Booking system initialized');
 }

@@ -1,15 +1,12 @@
-// ============ MODAL FUNCTIONALITY ============
-
-// Define global functions immediately
-window.openModal = openModal;
-window.closeModal = closeModal;
-window.prevImage = prevImage;
-window.nextImage = nextImage;
-window.goToImage = goToImage;
-window.setCurrentPhotos = setCurrentPhotos;
+// ============ MODAL FUNCTIONALITY WITH TINDER SWIPE ============
 
 let currentPhotos = [];
 let currentIndex = 0;
+let startX = 0;
+let startY = 0;
+let isDragging = false;
+let dragOffset = 0;
+let rotation = 0;
 
 // Set current photos (called from gallery.js)
 function setCurrentPhotos(photos) {
@@ -34,7 +31,7 @@ function openModal(index) {
     currentIndex = index;
     const photo = currentPhotos[currentIndex];
     
-    const modal = document.getElementById('modal');
+    const modal = document.getElementById('photoModal');
     const modalImage = document.getElementById('modalImage');
     const modalCaption = document.getElementById('modalCaption');
     const modalDots = document.getElementById('modalDots');
@@ -48,28 +45,18 @@ function openModal(index) {
     modal.style.display = 'flex';
     modal.classList.remove('open');
     
-    // Clear any previous styles
+    // Clear any previous styles and animations
     modalImage.style.cssText = '';
+    modalImage.classList.remove('swipe-left', 'swipe-right', 'swipe-up');
+    modalImage.style.transform = 'translateX(0) rotate(0deg)';
     
     // Set image
-    modalImage.style.opacity = '0'; // Start at 0 for fade in
+    modalImage.style.opacity = '0';
     modalImage.src = photo.filepath || '';
     modalImage.alt = photo.caption || 'Designer Dress';
     
-    // Set fixed 1080x1350 dimensions - NO OPACITY ON IMAGE
-    setTimeout(() => {
-        modalImage.style.width = '1080px';
-        modalImage.style.height = '1350px';
-        modalImage.style.maxWidth = '80vw';
-        modalImage.style.maxHeight = '80vh';
-        modalImage.style.objectFit = 'contain';
-        modalImage.style.background = 'rgba(255, 255, 255, 0.95)'; // Solid white background
-        modalImage.style.display = 'block';
-        modalImage.style.margin = '0 auto';
-        modalImage.style.border = '20px solid rgba(255, 255, 255, 0.3)'; // Low opacity border
-        modalImage.style.borderRadius = '15px';
-        modalImage.style.boxShadow = '0 30px 80px rgba(0, 0, 0, 0.4)';
-    }, 10);
+    // Reset drag state
+    resetDrag();
     
     // Set caption
     if (photo.caption && photo.caption.trim() !== '') {
@@ -83,13 +70,12 @@ function openModal(index) {
     if (modalDots) {
         modalDots.innerHTML = '';
         for (let i = 0; i < currentPhotos.length; i++) {
-            const dot = createElement('button', {
-                className: `modal-dot ${i === currentIndex ? 'active' : ''}`,
-                onclick: (e) => {
-                    e.stopPropagation();
-                    goToImage(i);
-                }
-            });
+            const dot = document.createElement('button');
+            dot.className = `modal-dot ${i === currentIndex ? 'active' : ''}`;
+            dot.onclick = (e) => {
+                e.stopPropagation();
+                goToImage(i);
+            };
             modalDots.appendChild(dot);
         }
     }
@@ -98,7 +84,7 @@ function openModal(index) {
     void modal.offsetWidth;
     modal.classList.add('open');
     
-    // Fade in image to FULL OPACITY
+    // Fade in image
     setTimeout(() => {
         modalImage.style.opacity = '1';
     }, 50);
@@ -109,16 +95,12 @@ function openModal(index) {
     
     // Handle image load
     modalImage.onload = function() {
-        // Maintain 1080x1350 dimensions
-        this.style.width = '1080px';
-        this.style.height = '1350px';
-        this.style.background = 'rgba(255, 255, 255, 0.95)'; // Solid white
+        this.style.opacity = '1';
     };
     
     // Handle image load error
     modalImage.onerror = function() {
-        // Create a placeholder with solid white background
-        this.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="1350" viewBox="0 0 1080 1350"><rect width="1080" height="1350" fill="rgba(255,255,255,0.95)"/><text x="540" y="675" text-anchor="middle" font-family="Arial" font-size="48" fill="rgba(0,0,0,0.5)">Image not available</text></svg>';
+        this.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="400" height="500" viewBox="0 0 400 500"><rect width="400" height="500" fill="#1a1a1a"/><text x="200" y="250" text-anchor="middle" font-family="Arial" font-size="24" fill="#666">Image not available</text></svg>';
         this.style.opacity = '1';
     };
 }
@@ -133,6 +115,10 @@ function goToImage(index) {
     const modalCaption = document.getElementById('modalCaption');
     
     if (!modalImage || !modalCaption) return;
+    
+    // Reset image position before transition
+    modalImage.style.transform = 'translateX(0) rotate(0deg)';
+    modalImage.classList.remove('swipe-left', 'swipe-right', 'swipe-up');
     
     // Fade out current image
     modalImage.style.opacity = '0';
@@ -149,9 +135,10 @@ function goToImage(index) {
             modalCaption.style.display = 'none';
         }
         
-        // Fade in new image to FULL OPACITY
+        // Fade in new image
         setTimeout(() => {
             modalImage.style.opacity = '1';
+            resetDrag();
         }, 50);
         
         updateActiveDot();
@@ -168,7 +155,7 @@ function updateActiveDot() {
 
 // Close modal
 function closeModal() {
-    const modal = document.getElementById('modal');
+    const modal = document.getElementById('photoModal');
     if (!modal) return;
     
     modal.classList.remove('open');
@@ -177,6 +164,7 @@ function closeModal() {
         modal.style.display = 'none';
         document.removeEventListener('keydown', handleKeyboardNav);
         document.body.style.overflow = 'auto';
+        resetDrag();
     }, 400);
 }
 
@@ -187,10 +175,13 @@ function handleKeyboardNav(e) {
             closeModal();
             break;
         case 'ArrowLeft':
-            prevImage();
+            swipeImage('left');
             break;
         case 'ArrowRight':
-            nextImage();
+            swipeImage('right');
+            break;
+        case 'ArrowUp':
+            swipeImage('up');
             break;
         case ' ':
             e.preventDefault();
@@ -212,15 +203,190 @@ function nextImage() {
     goToImage(newIndex);
 }
 
+// Swipe image with animation
+function swipeImage(direction) {
+    const modalImage = document.getElementById('modalImage');
+    if (!modalImage) return;
+    
+    // Remove any existing swipe classes
+    modalImage.classList.remove('swipe-left', 'swipe-right', 'swipe-up');
+    
+    // Trigger reflow
+    void modalImage.offsetWidth;
+    
+    // Add swipe class based on direction
+    if (direction === 'left') {
+        modalImage.classList.add('swipe-left');
+        setTimeout(() => nextImage(), 300);
+    } else if (direction === 'right') {
+        modalImage.classList.add('swipe-right');
+        setTimeout(() => prevImage(), 300);
+    } else if (direction === 'up') {
+        modalImage.classList.add('swipe-up');
+        setTimeout(() => closeModal(), 300);
+    }
+}
+
+// ============ DRAG AND SWIPE FUNCTIONALITY ============
+
+function startDrag(e) {
+    const modalImage = document.getElementById('modalImage');
+    if (!modalImage) return;
+    
+    isDragging = true;
+    startX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
+    startY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
+    dragOffset = 0;
+    rotation = 0;
+    
+    // Add active class to overlay
+    const overlay = document.querySelector('.drag-overlay');
+    if (overlay) overlay.classList.add('active');
+    
+    // Show swipe indicators
+    updateSwipeIndicators(0);
+    
+    // Prevent default behavior for touch events
+    if (e.type.includes('touch')) {
+        e.preventDefault();
+    }
+}
+
+function dragImage(e) {
+    if (!isDragging) return;
+    
+    const modalImage = document.getElementById('modalImage');
+    if (!modalImage) return;
+    
+    const currentX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
+    const currentY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
+    
+    dragOffset = currentX - startX;
+    const verticalOffset = currentY - startY;
+    
+    // Calculate rotation based on drag offset (max 30 degrees)
+    rotation = (dragOffset / 15);
+    if (rotation > 30) rotation = 30;
+    if (rotation < -30) rotation = -30;
+    
+    // Apply transform
+    modalImage.style.transform = `translateX(${dragOffset}px) rotate(${rotation}deg)`;
+    
+    // Update swipe indicators
+    updateSwipeIndicators(dragOffset);
+    
+    // Add resistance effect for vertical drag (to close)
+    if (Math.abs(verticalOffset) > 50) {
+        const scale = Math.max(0.8, 1 - Math.abs(verticalOffset) / 500);
+        modalImage.style.transform += ` scale(${scale})`;
+        
+        // Show up indicator for close
+        const upIndicator = document.querySelector('.swipe-indicator-up');
+        if (upIndicator) {
+            upIndicator.style.opacity = Math.min(0.7, Math.abs(verticalOffset) / 100);
+        }
+    }
+}
+
+function endDrag(e) {
+    if (!isDragging) return;
+    
+    isDragging = false;
+    const modalImage = document.getElementById('modalImage');
+    if (!modalImage) return;
+    
+    // Remove active class from overlay
+    const overlay = document.querySelector('.drag-overlay');
+    if (overlay) overlay.classList.remove('active');
+    
+    // Hide all swipe indicators
+    hideSwipeIndicators();
+    
+    // Check if drag is significant enough to trigger action
+    if (Math.abs(dragOffset) > 100) {
+        // Swipe right (previous) or left (next)
+        if (dragOffset > 0) {
+            swipeImage('right'); // Swipe right = previous
+        } else {
+            swipeImage('left'); // Swipe left = next
+        }
+    } else {
+        // Return to center with smooth animation
+        modalImage.style.transition = 'transform 0.3s ease';
+        modalImage.style.transform = 'translateX(0) rotate(0deg)';
+        
+        setTimeout(() => {
+            modalImage.style.transition = '';
+        }, 300);
+    }
+    
+    // Reset drag variables
+    dragOffset = 0;
+    rotation = 0;
+}
+
+function resetDrag() {
+    isDragging = false;
+    startX = 0;
+    startY = 0;
+    dragOffset = 0;
+    rotation = 0;
+    
+    const modalImage = document.getElementById('modalImage');
+    if (modalImage) {
+        modalImage.style.transform = 'translateX(0) rotate(0deg)';
+        modalImage.style.transition = '';
+    }
+    
+    // Hide swipe indicators
+    hideSwipeIndicators();
+    
+    // Remove active class from overlay
+    const overlay = document.querySelector('.drag-overlay');
+    if (overlay) overlay.classList.remove('active');
+}
+
+function updateSwipeIndicators(offset) {
+    const leftIndicator = document.querySelector('.swipe-indicator-left');
+    const rightIndicator = document.querySelector('.swipe-indicator-right');
+    
+    if (offset > 50) {
+        // Swiping right - show left indicator (for previous)
+        if (leftIndicator) {
+            leftIndicator.classList.add('show');
+            leftIndicator.style.opacity = Math.min(0.7, offset / 200);
+        }
+        if (rightIndicator) rightIndicator.classList.remove('show');
+    } else if (offset < -50) {
+        // Swiping left - show right indicator (for next)
+        if (rightIndicator) {
+            rightIndicator.classList.add('show');
+            rightIndicator.style.opacity = Math.min(0.7, Math.abs(offset) / 200);
+        }
+        if (leftIndicator) leftIndicator.classList.remove('show');
+    } else {
+        // Not swiping enough - hide indicators
+        hideSwipeIndicators();
+    }
+}
+
+function hideSwipeIndicators() {
+    const indicators = document.querySelectorAll('.swipe-indicator');
+    indicators.forEach(indicator => {
+        indicator.classList.remove('show');
+        indicator.style.opacity = '0';
+    });
+}
+
 // Initialize modal
 function initModal() {
-    console.log('Modal initialized');
+    console.log('Modal initialized with swipe functionality');
     
     // Setup modal backdrop click
-    const modal = document.getElementById('modal');
+    const modal = document.getElementById('photoModal');
     if (modal) {
         modal.addEventListener('click', function(e) {
-            if (e.target === this || e.target.classList.contains('modal-image-container')) {
+            if (e.target === this) {
                 closeModal();
             }
         });
@@ -236,8 +402,56 @@ function initModal() {
     const prevBtn = document.querySelector('.modal-prev');
     const nextBtn = document.querySelector('.modal-next');
     
-    if (prevBtn) prevBtn.onclick = prevImage;
-    if (nextBtn) nextBtn.onclick = nextImage;
+    if (prevBtn) prevBtn.onclick = () => swipeImage('right');
+    if (nextBtn) nextBtn.onclick = () => swipeImage('left');
+    
+    // Setup drag events for the image
+    const modalImage = document.getElementById('modalImage');
+    if (modalImage) {
+        // Mouse events
+        modalImage.addEventListener('mousedown', startDrag);
+        document.addEventListener('mousemove', dragImage);
+        document.addEventListener('mouseup', endDrag);
+        
+        // Touch events for mobile
+        modalImage.addEventListener('touchstart', startDrag, { passive: false });
+        document.addEventListener('touchmove', dragImage, { passive: false });
+        document.addEventListener('touchend', endDrag);
+        
+        // Prevent image drag default behavior
+        modalImage.addEventListener('dragstart', (e) => e.preventDefault());
+    }
+    
+    // Add swipe indicators to modal
+    const modalBody = document.querySelector('.modal-body');
+    if (modalBody) {
+        const leftIndicator = document.createElement('div');
+        leftIndicator.className = 'swipe-indicator swipe-indicator-left';
+        leftIndicator.innerHTML = '←';
+        leftIndicator.title = 'Swipe right for previous';
+        
+        const rightIndicator = document.createElement('div');
+        rightIndicator.className = 'swipe-indicator swipe-indicator-right';
+        rightIndicator.innerHTML = '→';
+        rightIndicator.title = 'Swipe left for next';
+        
+        modalBody.appendChild(leftIndicator);
+        modalBody.appendChild(rightIndicator);
+        
+        // Add drag overlay
+        const dragOverlay = document.createElement('div');
+        dragOverlay.className = 'drag-overlay';
+        modalBody.appendChild(dragOverlay);
+    }
+    
+    // Make functions available globally
+    window.openModal = openModal;
+    window.closeModal = closeModal;
+    window.prevImage = prevImage;
+    window.nextImage = nextImage;
+    window.goToImage = goToImage;
+    window.setCurrentPhotos = setCurrentPhotos;
+    window.swipeImage = swipeImage;
 }
 
 // Initialize when DOM is loaded

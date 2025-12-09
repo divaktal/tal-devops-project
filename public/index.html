@@ -3,525 +3,187 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lily Studio - Admin Panel</title>
+    <title>Lily Studio - Professional Photography</title>
     
     <!-- Google Font -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Lato:wght@300;400;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
-    <!-- Modular CSS Files -->
-    <link rel="stylesheet" href="/admin/css/main.css">
-    <link rel="stylesheet" href="/admin/css/components.css">
-    <link rel="stylesheet" href="/admin/css/sidebar.css">
-    <link rel="stylesheet" href="/admin/css/topbar.css">
-    <link rel="stylesheet" href="/admin/css/tables.css">
-    <link rel="stylesheet" href="/admin/css/forms.css">
-    <link rel="stylesheet" href="/admin/css/pages.css">
-    <link rel="stylesheet" href="/admin/css/modal.css">
-    <link rel="stylesheet" href="/admin/css/notifications.css">
-    <link rel="stylesheet" href="/admin/css/utilities.css">
-    <link rel="stylesheet" href="/admin/css/responsive.css">
+    <!-- Public CSS Files -->
+    <link rel="stylesheet" href="/css/main.css">
+    <link rel="stylesheet" href="/css/components.css">
+    <link rel="stylesheet" href="/css/gallery.css">
+    <link rel="stylesheet" href="/css/modal.css">
+    <link rel="stylesheet" href="/css/chat.css">
+    <link rel="stylesheet" href="/css/responsive.css">
 </head>
 <body>
-    <div class="admin-container">
-        <!-- Sidebar -->
-        <div class="sidebar">
-            <div class="sidebar-header">
-                <h2><i class="fas fa-crown"></i> Lily Admin</h2>
-                <p>Open Access</p>
-            </div>
-            <nav class="sidebar-nav">
-                <a href="#" class="nav-item active" data-page="dashboard">
-                    <i class="fas fa-tachometer-alt"></i> Dashboard
-                </a>
-                <a href="#" class="nav-item" data-page="photos">
-                    <i class="fas fa-images"></i> Photo Manager
-                </a>
-                <a href="#" class="nav-item" data-page="appointments">
-                    <i class="fas fa-calendar-alt"></i> Appointments
-                </a>
-                <a href="#" class="nav-item" data-page="upload">
-                    <i class="fas fa-upload"></i> Upload Photos
-                </a>
-                <a href="#" class="nav-item" data-page="blockedSlots">
-                    <i class="fas fa-ban"></i> Blocked Slots
-                </a>
-                <a href="#" class="nav-item" data-page="schedule">
-                    <i class="fas fa-calendar-day"></i> Schedule View
-                </a>
-                <a href="#" class="nav-item" data-page="backup">
-                    <i class="fas fa-database"></i> Backup
-                </a>
-            </nav>
-        </div>
-
-        <!-- Main Content -->
-        <div class="main-content">
-            <div class="topbar">
-                <div class="topbar-left">
-                    <h1 id="pageTitle">Dashboard</h1>
-                </div>
-                <div class="topbar-right">
-                    <span class="server-status">
-                        <i class="fas fa-circle server-online"></i>
-                        <span>Server Online</span>
-                    </span>
-                </div>
-            </div>
-
-            <!-- Dashboard Page -->
-            <div class="page" id="dashboardPage">
-                <div class="stats-grid">
-                    <div class="stat-card">
-                        <div class="stat-icon bg-primary-light">
-                            <i class="fas fa-calendar-day text-primary"></i>
-                        </div>
-                        <div class="stat-content">
-                            <h3 id="todayAppointments">0</h3>
-                            <p>Appointments Today</p>
-                        </div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-icon bg-secondary-light">
-                            <i class="fas fa-calendar-alt text-secondary"></i>
-                        </div>
-                        <div class="stat-content">
-                            <h3 id="totalAppointments">0</h3>
-                            <p>Total Appointments</p>
-                        </div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-icon bg-success-light">
-                            <i class="fas fa-images text-success"></i>
-                        </div>
-                        <div class="stat-content">
-                            <h3 id="totalPhotos">0</h3>
-                            <p>Total Photos</p>
-                        </div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-icon bg-warning-light">
-                            <i class="fas fa-ban text-warning"></i>
-                        </div>
-                        <div class="stat-content">
-                            <h3 id="totalBlocked">0</h3>
-                            <p>Blocked Slots</p>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="recent-section">
-                    <h2>Recent Appointments</h2>
-                    <div class="table-container">
-                        <table id="recentAppointments">
-                            <thead>
-                                <tr>
-                                    <th>Name</th>
-                                    <th>Phone</th>
-                                    <th>Date</th>
-                                    <th>Time</th>
-                                    <th>Action</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <!-- Will be populated -->
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-                
-                <div class="recent-section mt-30">
-                    <h2>Recent Blocked Slots</h2>
-                    <div class="table-container">
-                        <table id="recentBlockedSlots">
-                            <thead>
-                                <tr>
-                                    <th>Date</th>
-                                    <th>Time</th>
-                                    <th>Reason</th>
-                                    <th>Action</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <!-- Will be populated -->
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Photos Page -->
-            <div class="page hidden" id="photosPage">
-                <div class="page-header">
-                    <h2>Photo Gallery Manager</h2>
-                    <div class="page-actions">
-                        <select id="photoCategoryFilter">
-                            <option value="">All Categories</option>
-                            <option value="portfolio">Portfolio</option>
-                            <option value="wedding">Wedding</option>
-                            <option value="evening">Evening Wear</option>
-                            <option value="casual">Casual</option>
-                        </select>
-                        <button class="btn-primary" onclick="admin.modules.photos.showUploadPage()">
-                            <i class="fas fa-plus"></i> Add Photo
-                        </button>
-                    </div>
-                </div>
-                <div class="photos-grid" id="photosGrid">
-                    <div class="loading-spinner"></div>
-                </div>
-            </div>
-
-            <!-- Appointments Page -->
-            <div class="page hidden" id="appointmentsPage">
-                <div class="page-header">
-                    <h2>Appointment Management</h2>
-                    <div class="page-actions">
-                        <input type="date" id="appointmentDateFilter" onchange="admin.modules.appointments.loadAppointments()">
-                        <button class="btn-secondary" onclick="admin.modules.backup.exportAppointments()">
-                            <i class="fas fa-file-export"></i> Export CSV
-                        </button>
-                    </div>
-                </div>
-                <div class="table-container">
-                    <table id="appointmentsTable">
-                        <thead>
-                            <tr>
-                                <th>ID</th>
-                                <th>Client Name</th>
-                                <th>Phone</th>
-                                <th>Date</th>
-                                <th>Time</th>
-                                <th>Booked On</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <!-- Will be populated -->
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <!-- Upload Page -->
-            <div class="page hidden" id="uploadPage">
-                <div class="upload-container">
-                    <h2>Upload New Photos</h2>
-                    <form id="uploadForm">
-                        <div class="upload-area" id="dropArea">
-                            <i class="fas fa-cloud-upload-alt"></i>
-                            <p>Drag & drop photos here or click to browse</p>
-                            <input type="file" id="fileInput" multiple accept="image/*" class="hidden">
-                            <button type="button" class="btn-browse" onclick="document.getElementById('fileInput').click()">
-                                Browse Files
-                            </button>
-                        </div>
-                        <div class="form-group">
-                            <label for="photoCaption">Caption (optional)</label>
-                            <input type="text" id="photoCaption" placeholder="Enter photo caption">
-                        </div>
-                        <div class="form-group">
-                            <label for="photoCategory">Category</label>
-                            <select id="photoCategory">
-                                <option value="portfolio">Portfolio</option>
-                                <option value="wedding">Wedding</option>
-                                <option value="evening">Evening Wear</option>
-                                <option value="casual">Casual</option>
-                            </select>
-                        </div>
-                        <div class="upload-preview" id="uploadPreview"></div>
-                        <button type="submit" class="btn-primary" id="uploadBtn">
-                            <i class="fas fa-upload"></i> Upload Photos
-                        </button>
-                    </form>
-                </div>
-            </div>
-
-            <!-- Blocked Slots Page -->
-            <div class="page hidden" id="blockedSlotsPage">
-                <div class="page-header">
-                    <h2>Blocked Time Slots Management</h2>
-                    <div class="page-actions">
-                        <button class="btn-primary" onclick="admin.modules.blockslots.showBlockForm()">
-                            <i class="fas fa-plus"></i> Add Block
-                        </button>
-                    </div>
-                </div>
-                
-                <!-- Block Creation Form -->
-                <div class="form-container hidden" id="blockFormContainer">
-                    <h3>Block Time Slot</h3>
-                    <form id="addBlockForm">
-                        <div class="block-type-selector">
-                            <button type="button" class="block-type-btn active" data-type="single">
-                                Single Day
-                            </button>
-                            <button type="button" class="block-type-btn" data-type="range">
-                                Date Range
-                            </button>
-                            <button type="button" class="block-type-btn" data-type="weekly">
-                                Weekly Recurring
-                            </button>
-                        </div>
-                        
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="blockDate">Date *</label>
-                                <input type="date" id="blockDate" required>
-                            </div>
-                            <div class="form-group">
-                                <label>Start Time *</label>
-                                <input type="time" id="blockStartTime" value="09:00" required>
-                            </div>
-                            <div class="form-group">
-                                <label>End Time *</label>
-                                <input type="time" id="blockEndTime" value="17:00" required>
-                            </div>
-                        </div>
-                        
-                        <div class="form-row hidden" id="rangeFields">
-                            <div class="form-group">
-                                <label for="endDate">End Date *</label>
-                                <input type="date" id="endDate">
-                            </div>
-                        </div>
-                        
-                        <div class="recurring-options hidden" id="weeklyFields">
-                            <h4>Weekly Recurring</h4>
-                            <div class="days-selector">
-                                <input type="checkbox" id="day0" class="day-checkbox" value="0">
-                                <label for="day0" class="day-label">Sun</label>
-                                
-                                <input type="checkbox" id="day1" class="day-checkbox" value="1">
-                                <label for="day1" class="day-label">Mon</label>
-                                
-                                <input type="checkbox" id="day2" class="day-checkbox" value="2">
-                                <label for="day2" class="day-label">Tue</label>
-                                
-                                <input type="checkbox" id="day3" class="day-checkbox" value="3">
-                                <label for="day3" class="day-label">Wed</label>
-                                
-                                <input type="checkbox" id="day4" class="day-checkbox" value="4">
-                                <label for="day4" class="day-label">Thu</label>
-                                
-                                <input type="checkbox" id="day5" class="day-checkbox" value="5">
-                                <label for="day5" class="day-label">Fri</label>
-                                
-                                <input type="checkbox" id="day6" class="day-checkbox" value="6">
-                                <label for="day6" class="day-label">Sat</label>
-                            </div>
-                            
-                            <div class="form-group">
-                                <label for="weeksCount">Repeat for (weeks):</label>
-                                <input type="number" id="weeksCount" min="1" max="52" value="4">
-                            </div>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="blockReason">Reason (optional)</label>
-                            <input type="text" id="blockReason" placeholder="e.g., Holiday, Maintenance, Personal">
-                        </div>
-                        
-                        <div class="form-actions">
-                            <button type="button" class="btn-secondary" onclick="admin.modules.blockslots.hideBlockForm()">
-                                Cancel
-                            </button>
-                            <button type="submit" class="btn-primary">
-                                <i class="fas fa-ban"></i> Block Selected Time(s)
-                            </button>
-                        </div>
-                    </form>
-                </div>
-                
-                <!-- Current Blocked Slots -->
-                <div class="table-container">
-                    <table id="blockedSlotsTable">
-                        <thead>
-                            <tr>
-                                <th>Start Date</th>
-                                <th>End Date</th>
-                                <th>Time</th>
-                                <th>Reason</th>
-                                <th>Type</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <!-- Will be populated -->
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <!-- Schedule Page -->
-            <div class="page hidden" id="schedulePage">
-                <div class="page-header">
-                    <h2><i class="fas fa-calendar-day"></i> Daily Schedule View</h2>
-                    <div class="page-actions">
-                        <label for="scheduleDate" class="schedule-label">Select Date:</label>
-                        <input type="date" id="scheduleDate" class="schedule-input">
-                        <button class="btn-primary btn-today" onclick="admin.modules.schedule.loadTodaySchedule()">
-                            <i class="fas fa-calendar-day"></i> Today
-                        </button>
-                    </div>
-                </div>
-                
-                <div class="summary-cards hidden" id="scheduleSummary">
-                    <div class="card">
-                        <h3>Appointments</h3>
-                        <p id="timelineTotalAppointments">0</p>
-                    </div>
-                    <div class="card">
-                        <h3>Blocked Slots</h3>
-                        <p id="timelineTotalBlocked">0</p>
-                    </div>
-                    <div class="card">
-                        <h3>Available Slots</h3>
-                        <p id="timelineAvailableSlots">0</p>
-                    </div>
-                </div>
-                
-                <div class="timeline-container" id="timelineContainer">
-                    <div class="timeline-empty-state">
-                        <i class="fas fa-calendar-alt"></i>
-                        <p>Select a date to view the schedule</p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Backup Page -->
-            <div class="page hidden" id="backupPage">
-                <div class="backup-container">
-                    <h2>Database Management</h2>
-                    <div class="backup-actions">
-                        <div class="backup-card" onclick="admin.modules.backup.backupDatabase()">
-                            <i class="fas fa-download"></i>
-                            <h3>Download Backup</h3>
-                            <p>Download complete database backup as JSON</p>
-                        </div>
-                        <div class="backup-card" onclick="admin.modules.backup.exportAppointmentsCSV()">
-                            <i class="fas fa-file-csv"></i>
-                            <h3>Export Appointments</h3>
-                            <p>Export all appointments as CSV file</p>
-                        </div>
-                    </div>
-                    <div class="database-info">
-                        <h3>Database Information</h3>
-                        <div class="info-grid">
-                            <div class="info-item">
-                                <span class="info-label">Total Appointments:</span>
-                                <span class="info-value" id="dbAppointments">0</span>
-                            </div>
-                            <div class="info-item">
-                                <span class="info-label">Total Photos:</span>
-                                <span class="info-value" id="dbPhotos">0</span>
-                            </div>
-                            <div class="info-item">
-                                <span class="info-label">Total Blocked Slots:</span>
-                                <span class="info-value" id="dbBlocked">0</span>
-                            </div>
-                            <div class="info-item">
-                                <span class="info-label">Last Backup:</span>
-                                <span class="info-value" id="lastBackup">Never</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+    <!-- Title Card -->
+    <div class="title-card" id="home">
+        <h1>Lily Designer Studio</h1>
+        <p>Crafting Timeless Elegance</p>
+    </div>
+    
+    <!-- Navigation Bar -->
+    <nav>
+        <a href="#home" aria-label="Home">Home</a>
+        <a href="#about" aria-label="About Us">About Us</a>
+        <a href="#services" aria-label="Services">Services</a>
+        <a href="#portfolio" aria-label="Portfolio">Portfolio</a>
+        <a href="#contact" aria-label="Contact">Contact</a>
+        <a href="#schedule" aria-label="Schedule Appointment">Schedule</a>
+    </nav>
+    
+    <!-- Hero Section -->
+    <div class="hero" id="about">
+        <h1>Welcome to Lily Designer Studio</h1>
+        <p>Where every stitch tells a story. Specializing in custom-made dresses for every occasion.</p>
+    </div>
+    
+    <!-- Services Section -->
+    <div class="services" id="services">
+        <h2>Our Services</h2>
+        <p>We offer a wide range of services, including custom dressmaking, alterations, and consultations.</p>
+    </div>
+    
+    <!-- Portfolio Section -->
+    <div class="portfolio" id="portfolio">
+        <h2>Portfolio</h2>
+        <div class="gallery" id="portfolioGallery">
+            <!-- Photos will be loaded dynamically from database -->
+            <div class="loading-placeholder">
+                <div class="loading-spinner"></div>
+                <p>Loading portfolio...</p>
             </div>
         </div>
     </div>
+    
+    <!-- Scheduling Section -->
+    <div class="scheduling" id="schedule">
+        <h2>Book a Visit</h2>
+        <p class="subtitle">Schedule your personalized consultation with us</p>
+        
+        <!-- Error/Success Messages -->
+        <div id="errorMessage" style="display: none; background: #ffebee; color: #c62828; padding: 15px; margin: 10px 0; border-radius: 5px; border-left: 4px solid #c62828;">
+            <span id="errorText"></span>
+        </div>
+        
+        <div id="successMessage" style="display: none; background: #e8f5e9; color: #2e7d32; padding: 15px; margin: 10px 0; border-radius: 5px; border-left: 4px solid #4caf50;">
+            <span id="successText"></span>
+        </div>
+        
+        <form id="scheduleForm">
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="firstName">First Name</label>
+                    <input type="text" id="firstName" name="firstName" placeholder="Your first name" required>
+                    <span class="error-message" id="firstNameError"></span>
+                </div>
+                <div class="form-group">
+                    <label for="familyName">Family Name</label>
+                    <input type="text" id="familyName" name="familyName" placeholder="Your family name" required>
+                    <span class="error-message" id="familyNameError"></span>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="phone">Phone Number</label>
+                <input type="tel" id="phone" name="phone" placeholder="Your phone number" required>
+                <span class="error-message" id="phoneError"></span>
+            </div>
 
-    <!-- Edit Photo Modal -->
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="appointmentDate">Preferred Date</label>
+                    <input type="date" id="appointmentDate" name="date" required>
+                    <span class="error-message" id="dateError"></span>
+                </div>
+                <div class="form-group">
+                    <label for="appointmentTime">Preferred Time</label>
+                    <select id="appointmentTime" name="time" required>
+                        <option value="">Select an hour</option>
+                        <option value="09:00">9:00 AM</option>
+                        <option value="10:00">10:00 AM</option>
+                        <option value="11:00">11:00 AM</option>
+                        <option value="12:00">12:00 PM</option>
+                        <option value="13:00">1:00 PM</option>
+                        <option value="14:00">2:00 PM</option>
+                        <option value="15:00">3:00 PM</option>
+                        <option value="16:00">4:00 PM</option>
+                        <option value="17:00">5:00 PM</option>
+                    </select>
+                    <span class="error-message" id="timeError"></span>
+                </div>
+            </div>
+
+            <button type="submit" class="submit-btn" id="submitBtn">
+                <span class="btn-text">Schedule Appointment</span>
+                <span class="btn-icon">📅</span>
+            </button>
+        </form>
+        
+        <!-- Available Times Info -->
+        <div id="availableTimesInfo" style="margin-top: 20px;"></div>
+        
+        <!-- confirmation message -->
+        <div class="confirmation-message" id="confirmationMessage" style="display: none;">
+            <div class="confirmation-icon">✅</div>
+            <h3>Appointment Scheduled!</h3>
+            <p>We've received your booking and will contact you shortly to confirm.</p>
+        </div>
+    </div>
+    
+    <!-- Contact Section -->
+    <div class="contact" id="contact">
+        <h2>Contact Us</h2>
+        <p>Reach out to us for inquiries or to schedule an appointment.</p>
+    </div>
+    
+    <!-- Modal for Maximized Photos -->
     <div class="modal hidden" id="photoModal">
         <div class="modal-content">
             <div class="modal-header">
-                <h3>Edit Photo</h3>
-                <button class="modal-close" onclick="adminUI.closeModal('photoModal')">&times;</button>
+                <h3><i class="fas fa-image"></i> Photo View</h3>
+                <button class="modal-close">&times;</button>
             </div>
             <div class="modal-body">
-                <form id="editPhotoForm">
-                    <input type="hidden" id="editPhotoId">
-                    <div class="form-group">
-                        <label for="editCaption">Caption</label>
-                        <input type="text" id="editCaption">
-                    </div>
-                    <div class="form-group">
-                        <label for="editCategory">Category</label>
-                        <select id="editCategory">
-                            <option value="portfolio">Portfolio</option>
-                            <option value="wedding">Wedding</option>
-                            <option value="evening">Evening Wear</option>
-                            <option value="casual">Casual</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="editDisplayOrder">Display Order</label>
-                        <input type="number" id="editDisplayOrder" min="0" value="0">
-                    </div>
-                    <div class="form-group">
-                        <label class="checkbox-label">
-                            <input type="checkbox" id="editIsActive" checked>
-                            <span>Active (show on website)</span>
-                        </label>
-                    </div>
-                    <div class="modal-actions">
-                        <button type="button" class="btn-secondary" onclick="adminUI.closeModal('photoModal')">
-                            Cancel
-                        </button>
-                        <button type="submit" class="btn-primary">
-                            Save Changes
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-
-    <!-- Beautiful Confirmation Modal -->
-    <div class="modal hidden" id="confirmationModal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3><i class="fas fa-exclamation-triangle"></i> Confirm Action</h3>
-                <button class="modal-close" onclick="adminUI.closeModal('confirmationModal')">&times;</button>
-            </div>
-            <div class="modal-body">
-                <div class="confirmation-icon">
-                    <i class="fas fa-exclamation-triangle icon-warning"></i>
+                <div class="photo-preview">
+                    <img id="modalImage" src="" alt="Zoomed Image">
                 </div>
-                <div id="confirmationContent">
-                    <p id="confirmationMessage">Are you sure you want to perform this action?</p>
-                    <div id="confirmationDetails" class="confirmation-details"></div>
-                    <div id="deletePreview" class="delete-preview hidden">
-                        <h4 id="deleteItemName"></h4>
-                        <p id="deleteItemDetails"></p>
-                    </div>
-                    <div id="photoPreview" class="photo-preview hidden">
-                        <img id="previewImage" src="" alt="Preview">
-                    </div>
-                </div>
+                <div id="modalCaption" class="modal-caption"></div>
+                <div class="modal-dots-container" id="modalDots"></div>
             </div>
             <div class="modal-actions">
-                <button type="button" class="btn-secondary" onclick="adminUI.closeModal('confirmationModal')">
-                    <i class="fas fa-times"></i> Cancel
-                </button>
-                <button type="button" class="btn-danger" id="confirmActionBtn">
-                    <i class="fas fa-trash"></i> Delete
-                </button>
+                <button class="btn-secondary modal-prev">‹ Previous</button>
+                <button class="btn-secondary modal-next">Next ›</button>
             </div>
         </div>
     </div>
-
+    
+    <!-- Chat Toggle Button -->
+    <button class="chat-toggle" aria-label="Toggle chat window">💬</button>
+    
+    <!-- Chat Window -->
+    <div class="chat-window" id="chatWindow" role="dialog" aria-labelledby="chatHeader" aria-hidden="true">
+        <div class="chat-header" id="chatHeader">
+            Lily_Bot <button aria-label="Close chat window">✖</button>
+        </div>
+        <div class="chat-body" id="chatBody" role="document"></div>
+        <div class="chat-footer">
+            <button>Custom Dress</button>
+            <button>Pricing</button>
+            <button>Consultations</button>
+        </div>
+    </div>
+    
     <!-- Include all JavaScript files -->
-    <script src="/admin/js/admin-ui.js"></script>
-    <script src="/admin/js/admin-dashboard.js"></script>
-    <script src="/admin/js/admin-photos.js"></script>
-    <script src="/admin/js/admin-appointments.js"></script>
-    <script src="/admin/js/admin-blockslots.js"></script>
-    <script src="/admin/js/admin-schedule.js"></script>
-    <script src="/admin/js/admin-upload.js"></script>
-    <script src="/admin/js/admin-backup.js"></script>
-    <script src="/admin/js/admin.js"></script>
+    <script src="/js/main.js"></script>
+    <script src="/js/utils.js"></script>
+    <script src="/js/modal.js"></script>
+    <script src="/js/gallery.js"></script>
+    <script src="/js/booking.js"></script>
+    <script src="/js/chat.js"></script>
 </body>
 </html>

@@ -20,28 +20,30 @@
 /* ============ GALLERY GRID ============ */
 .gallery {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
     gap: 20px;
     padding: 20px;
     align-items: start;
 }
 
-/* ============ GALLERY ITEMS - UNIFORM SIZING ============ */
+/* ============ GALLERY ITEMS - UNIFORM SIZING LIKE TINDER ============ */
 .gallery-item {
     position: relative;
     overflow: hidden;
-    border-radius: 12px;
+    border-radius: 15px;
     cursor: pointer;
-    transition: transform 0.4s ease, box-shadow 0.4s ease;
-    background: rgba(255, 255, 255, 0.3); /* LOW OPACITY BACKGROUND */
-    height: 320px;
+    transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), 
+                box-shadow 0.4s ease;
+    background: rgba(255, 255, 255, 0.3);
+    height: 350px; /* Fixed height */
     width: 100%;
     display: flex;
     align-items: center;
     justify-content: center;
-    aspect-ratio: 4/5;
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
-    backdrop-filter: blur(5px); /* Glass effect */
+    aspect-ratio: 2/3; /* Tinder-like aspect ratio */
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
+    backdrop-filter: blur(5px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 /* Image container with fixed dimensions */
@@ -51,42 +53,34 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 10px;
+    padding: 0;
     box-sizing: border-box;
+    overflow: hidden;
+    background: #1a1a1a; /* Consistent dark background */
 }
 
-/* Images NORMAL OPACITY, background around them has low opacity */
+/* Images - CROPPED TO FIT CONTAINER LIKE TINDER */
 .gallery-item img {
     width: 100%;
     height: 100%;
-    object-fit: contain;
+    object-fit: cover; /* Crop to fill container */
     object-position: center;
-    border-radius: 8px;
-    background: rgba(255, 255, 255, 0.1); /* Very low opacity around image */
-    opacity: 1; /* FULL OPACITY FOR IMAGES */
-    transition: all 0.3s ease;
-}
-
-/* Remove special classes if not needed */
-.gallery-item img.optimized,
-.gallery-item img.high-quality {
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
-    opacity: 1; /* FULL OPACITY */
-    background: rgba(255, 255, 255, 0.1);
+    border-radius: 0;
+    background: #1a1a1a;
+    opacity: 1;
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
 /* Hover effects */
 .gallery-item:hover {
-    transform: translateY(-5px) scale(1.02);
-    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.15);
-    background: rgba(255, 255, 255, 0.5); /* Slightly more opacity on hover */
+    transform: translateY(-8px) scale(1.03);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+    background: rgba(255, 255, 255, 0.4);
+    border-color: rgba(255, 255, 255, 0.3);
 }
 
 .gallery-item:hover img {
-    transform: scale(1.03);
-    background: rgba(255, 255, 255, 0.2);
+    transform: scale(1.08); /* Slight zoom on hover */
 }
 
 /* Caption */
@@ -95,41 +89,44 @@
     bottom: 0;
     left: 0;
     right: 0;
-    background: linear-gradient(to top, rgba(44, 62, 80, 0.9), transparent);
+    background: linear-gradient(to top, rgba(0, 0, 0, 0.85), transparent);
     color: white;
-    padding: 12px 15px;
+    padding: 15px 20px;
     font-size: 14px;
     font-weight: 500;
     text-align: center;
     opacity: 0;
-    transition: opacity 0.3s ease;
+    transition: opacity 0.4s ease;
     backdrop-filter: blur(5px);
+    transform: translateY(10px);
 }
 
 .gallery-item:hover .caption {
     opacity: 1;
+    transform: translateY(0);
 }
 
-/* View indicator */
+/* View indicator - Tinder style */
 .gallery-item::after {
-    content: '👁️ View';
+    content: '👁️ View Photo';
     position: absolute;
     top: 50%;
     left: 50%;
-    transform: translate(-50%, -50%) scale(0.8);
-    background: rgba(44, 62, 80, 0.85);
+    transform: translate(-50%, -50%) scale(0.9);
+    background: rgba(44, 62, 80, 0.9);
     color: white;
-    padding: 10px 20px;
-    border-radius: 20px;
-    font-size: 13px;
+    padding: 12px 24px;
+    border-radius: 25px;
+    font-size: 14px;
     font-weight: 500;
     opacity: 0;
-    transition: all 0.3s ease;
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     pointer-events: none;
-    letter-spacing: 1px;
+    letter-spacing: 0.5px;
     backdrop-filter: blur(10px);
     border: 1px solid rgba(255, 255, 255, 0.3);
     z-index: 2;
+    white-space: nowrap;
 }
 
 .gallery-item:hover::after {
@@ -141,4 +138,75 @@
 .gallery-item,
 .gallery-item img {
     cursor: pointer !important;
+}
+
+/* Loading placeholder */
+.loading-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 400px;
+    width: 100%;
+    grid-column: 1 / -1;
+}
+
+.loading-spinner {
+    width: 50px;
+    height: 50px;
+    border: 5px solid #f3f3f3;
+    border-top: 5px solid var(--primary-color);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: 20px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Responsive gallery */
+@media (max-width: 1024px) {
+    .gallery {
+        grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+        gap: 15px;
+    }
+    
+    .gallery-item {
+        height: 320px;
+    }
+}
+
+@media (max-width: 768px) {
+    .gallery {
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 12px;
+        padding: 15px;
+    }
+    
+    .gallery-item {
+        height: 280px;
+    }
+    
+    .gallery-item .caption {
+        padding: 12px 15px;
+        font-size: 13px;
+    }
+    
+    .gallery-item::after {
+        padding: 10px 18px;
+        font-size: 13px;
+    }
+}
+
+@media (max-width: 480px) {
+    .gallery {
+        grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+        gap: 10px;
+    }
+    
+    .gallery-item {
+        height: 240px;
+    }
 }

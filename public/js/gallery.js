@@ -57,6 +57,27 @@ function displayPhotos(photos) {
 
 // Create a gallery item with uniform sizing
 function createGalleryItem(photo, index) {
+    // Use the createElement function from utils.js or create our own
+    const createElement = window.createElement || function(tag, attributes = {}) {
+        const element = document.createElement(tag);
+        
+        for (const [key, value] of Object.entries(attributes)) {
+            if (key === 'className') {
+                element.className = value;
+            } else if (key === 'textContent') {
+                element.textContent = value;
+            } else if (key === 'innerHTML') {
+                element.innerHTML = value;
+            } else if (key === 'style' && typeof value === 'object') {
+                Object.assign(element.style, value);
+            } else {
+                element.setAttribute(key, value);
+            }
+        }
+        
+        return element;
+    };
+    
     const galleryItem = createElement('div', {
         className: 'gallery-item',
         'data-index': index
@@ -69,18 +90,8 @@ function createGalleryItem(photo, index) {
     const img = createElement('img', {
         src: photo.filepath || '',
         alt: photo.caption || photo.filename || 'Designer Dress',
-        loading: 'lazy',
-        className: 'optimized'
+        loading: 'lazy'
     });
-    
-    // Set uniform styling - NO OPACITY ON IMAGE
-    img.style.width = '100%';
-    img.style.height = '100%';
-    img.style.objectFit = 'contain';
-    img.style.backgroundColor = 'rgba(255, 255, 255, 0.1)'; // Low opacity background
-    img.style.opacity = '1'; // FULL OPACITY
-    img.style.borderRadius = '8px';
-    img.style.transition = 'all 0.3s ease';
     
     // Add click handler
     galleryItem.onclick = function(e) {
