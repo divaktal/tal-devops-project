@@ -2,7 +2,7 @@ replicaCount: 2
 
 image:
   repository: 448049807140.dkr.ecr.us-east-1.amazonaws.com/lily-designer-studio
-  tag: "7367e481da78a461b56c3175c442d1e3e3b3644e"
+  tag: "272beb2908b9a071a688590c78e9c419ea024714"
   pullPolicy: IfNotPresent
 
 service:
