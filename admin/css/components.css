@@ -192,3 +192,173 @@
 .backup-card:hover p {
     color: white;
 }
+
+button, input, select, textarea {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Modal backdrop blur effect */
+.modal {
+    backdrop-filter: blur(4px);
+}
+
+/* Focus styles for accessibility */
+button:focus, input:focus, select:focus {
+    outline: 2px solid #4299e1;
+    outline-offset: 2px;
+}
+
+/* ============================================
+   ADDITIONAL BUTTON STYLES FOR CONFLICT MODAL
+   ============================================ */
+
+.btn-warning {
+    background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    transition: all 0.3s;
+    font-family: 'Inter', sans-serif;
+    box-shadow: 0 4px 6px rgba(255, 152, 0, 0.2);
+}
+
+.btn-warning:hover {
+    background: linear-gradient(135deg, #f57c00 0%, #e65100 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(255, 152, 0, 0.3);
+}
+
+.btn-warning:active {
+    transform: translateY(0);
+}
+
+/* Conflict-specific button variants */
+#conflictModal .btn-warning {
+    padding: 14px 28px;
+    font-size: 15px;
+    border-radius: 10px;
+}
+
+#conflictModal .btn-secondary {
+    padding: 14px 28px;
+    font-size: 15px;
+    border-radius: 10px;
+    background: #718096;
+    border: none;
+    color: white;
+}
+
+#conflictModal .btn-secondary:hover {
+    background: #4a5568;
+}
+
+/* Icon buttons for conflict items */
+.conflict-actions-btn {
+    background: #4299e1;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.3s;
+    margin-top: 10px;
+}
+
+.conflict-actions-btn:hover {
+    background: #3182ce;
+    transform: translateY(-1px);
+}
+
+.conflict-actions-btn i {
+    font-size: 12px;
+}
+
+/* View button for appointments */
+.btn-view-appointments {
+    background: linear-gradient(135deg, #4CAF50 0%, #388E3C 100%);
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.3s;
+    margin-left: auto;
+}
+
+.btn-view-appointments:hover {
+    background: linear-gradient(135deg, #388E3C 0%, #2E7D32 100%);
+    transform: translateY(-2px);
+}
+
+/* Status indicators */
+.conflict-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.conflict-status-high {
+    background: rgba(244, 67, 54, 0.1);
+    color: #F44336;
+}
+
+.conflict-status-medium {
+    background: rgba(255, 152, 0, 0.1);
+    color: #FF9800;
+}
+
+.conflict-status-low {
+    background: rgba(33, 150, 243, 0.1);
+    color: #2196F3;
+}
+
+/* Tooltip for conflict items */
+.conflict-item-tooltip {
+    position: relative;
+    cursor: help;
+}
+
+.conflict-item-tooltip:hover::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #2d3748;
+    color: white;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    white-space: nowrap;
+    z-index: 1000;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.conflict-item-tooltip:hover::before {
+    content: '';
+    position: absolute;
+    bottom: calc(100% - 5px);
+    left: 50%;
+    transform: translateX(-50%);
+    border: 5px solid transparent;
+    border-top-color: #2d3748;
+}

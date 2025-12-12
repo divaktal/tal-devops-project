@@ -26,11 +26,6 @@ class UploadManager {
         const newFileInput = document.getElementById('fileInput');
         const newUploadForm = document.getElementById('uploadForm');
         
-        // Click to select files
-        newDropArea.addEventListener('click', () => {
-            newFileInput.click();
-        });
-        
         // Drag and drop
         newDropArea.addEventListener('dragover', (e) => {
             e.preventDefault();

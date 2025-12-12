@@ -2,76 +2,87 @@
 class ScheduleManager {
     constructor(admin) {
         this.admin = admin;
+        this.setupDateListener();
     }
     
-    async loadSchedulePage() {
-        // Set today's date as default
-        const today = new Date().toISOString().split('T')[0];
+    // Setup date change listener
+    setupDateListener() {
         const scheduleDate = document.getElementById('scheduleDate');
         if (scheduleDate) {
-            scheduleDate.value = today;
+            // Remove any existing listener first
+            scheduleDate.removeEventListener('change', this.handleDateChange);
             
-            // Add event listener for date change (auto-load)
-            scheduleDate.addEventListener('change', () => {
-                this.loadScheduleData();
-            });
+            // Add new listener
+            this.handleDateChange = this.handleDateChange.bind(this);
+            scheduleDate.addEventListener('change', this.handleDateChange);
         }
-        
-        // Load today's schedule
-        this.loadScheduleData();
     }
     
-    async loadScheduleData() {
+    // Handle date change
+    handleDateChange() {
         const date = document.getElementById('scheduleDate').value;
-        
-        if (!date) {
-            // Show placeholder if no date selected
-            const container = document.getElementById('timelineContainer');
-            if (container) {
-                container.innerHTML = `
-                    <div style="text-align: center; padding: 40px; color: #666;">
-                        <i class="fas fa-calendar-alt" style="font-size: 48px; margin-bottom: 15px; color: #ccc;"></i>
-                        <p>Select a date to view the schedule</p>
-                    </div>
-                `;
-            }
-            return;
+        if (date) {
+            this.loadSchedule(date);
         }
-        
+    }
+    
+    // This is called from admin.js and admin-ui.js
+    async loadSchedule(date = null) {
         try {
+            // If date is provided, update the date input
+            if (date) {
+                const scheduleDate = document.getElementById('scheduleDate');
+                if (scheduleDate) {
+                    scheduleDate.value = date;
+                }
+            } else {
+                // If no date provided, use the current value
+                date = document.getElementById('scheduleDate').value;
+                if (!date) {
+                    // Default to today
+                    date = new Date().toISOString().split('T')[0];
+                    const scheduleDate = document.getElementById('scheduleDate');
+                    if (scheduleDate) {
+                        scheduleDate.value = date;
+                    }
+                }
+            }
+            
+            console.log('Loading schedule for date:', date);
+            
+            // Show loading state
             const container = document.getElementById('timelineContainer');
             if (container) {
                 container.innerHTML = '<div class="loading-spinner"></div>';
             }
             
+            // Fetch data from API
             const data = await this.admin.fetchData(`${this.admin.apiBase}/appointments/timeline?date=${date}`);
             
             if (data.success) {
                 this.displayTimeline(data);
                 this.displayScheduleSummary(data.summary);
             } else {
-                this.admin.modules.ui.showMessage('error', 'Failed to load schedule: ' + data.error);
-                const container = document.getElementById('timelineContainer');
-                if (container) {
-                    container.innerHTML = `
-                        <div style="text-align: center; padding: 40px; color: #666;">
-                            <i class="fas fa-exclamation-triangle" style="font-size: 48px; margin-bottom: 15px; color: #ff9800;"></i>
-                            <p>Failed to load schedule</p>
-                        </div>
-                    `;
-                }
+                this.admin.modules.ui.showMessage('error', 'Failed to load schedule: ' + (data.error || 'Unknown error'));
+                this.showEmptyState('Failed to load schedule');
             }
         } catch (error) {
             console.error('Error loading schedule:', error);
-            const container = document.getElementById('timelineContainer');
-            if (container) {
-                container.innerHTML = `
-                    <div style="text-align: center; padding: 40px; color: #666;">
-                        <i class="fas fa-exclamation-triangle" style="font-size: 48px; margin-bottom: 15px; color: #f44336;"></i>
-                        <p>Error loading schedule. Please try again.</p>
-                    </div>
-                `;
-            }
+            this.admin.modules.ui.showMessage('error', 'Error loading schedule: ' + error.message);
+            this.showEmptyState('Error loading schedule. Please try again.');
+        }
+    }
+    
+    // Show empty state
+    showEmptyState(message) {
+        const container = document.getElementById('timelineContainer');
+        if (container) {
+            container.innerHTML = `
+                <div style="text-align: center; padding: 40px; color: #666;">
+                    <i class="fas fa-exclamation-triangle" style="font-size: 48px; margin-bottom: 15px; color: #f44336;"></i>
+                    <p>${message}</p>
+                </div>
+            `;
         }
     }
     
@@ -85,7 +96,7 @@ class ScheduleManager {
             </div>
         `;
         
-        if (data.timeline.length === 0) {
+        if (data.timeline && data.timeline.length === 0) {
             html += `
                 <div style="text-align: center; padding: 40px; color: #666;">
                     <i class="fas fa-calendar-check" style="font-size: 48px; margin-bottom: 15px; color: #4caf50;"></i>
@@ -93,7 +104,7 @@ class ScheduleManager {
                     <p style="font-size: 14px; color: #999;">All time slots are available</p>
                 </div>
             `;
-        } else {
+        } else if (data.timeline) {
             data.timeline.forEach(slot => {
                 let slotClass = 'available';
                 let slotContent = '<span style="color: #4caf50;">Available</span>';
@@ -133,6 +144,13 @@ class ScheduleManager {
                     </div>
                 `;
             });
+        } else {
+            html += `
+                <div style="text-align: center; padding: 40px; color: #666;">
+                    <i class="fas fa-exclamation-triangle" style="font-size: 48px; margin-bottom: 15px; color: #ff9800;"></i>
+                    <p>No schedule data available</p>
+                </div>
+            `;
         }
         
         container.innerHTML = html;
@@ -140,11 +158,11 @@ class ScheduleManager {
     
     displayScheduleSummary(summary) {
         const scheduleSummary = document.getElementById('scheduleSummary');
-        if (scheduleSummary) {
-            scheduleSummary.style.display = 'flex';
-            document.getElementById('timelineTotalAppointments').textContent = summary.totalAppointments;
-            document.getElementById('timelineTotalBlocked').textContent = summary.totalBlocked;
-            document.getElementById('timelineAvailableSlots').textContent = summary.availableSlots;
+        if (scheduleSummary && summary) {
+            scheduleSummary.classList.remove('hidden');
+            document.getElementById('timelineTotalAppointments').textContent = summary.totalAppointments || 0;
+            document.getElementById('timelineTotalBlocked').textContent = summary.totalBlocked || 0;
+            document.getElementById('timelineAvailableSlots').textContent = summary.availableSlots || 0;
         }
     }
     
@@ -153,7 +171,7 @@ class ScheduleManager {
         const scheduleDate = document.getElementById('scheduleDate');
         if (scheduleDate) {
             scheduleDate.value = today;
-            this.loadScheduleData();
+            this.loadSchedule(today);
         }
     }
 }

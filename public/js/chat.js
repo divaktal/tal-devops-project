@@ -8,14 +8,17 @@ function toggleChat() {
     if (!chatWindow || !chatToggle) return;
     
     if (chatWindow.classList.contains('open')) {
+        // Close chat - show button
         chatWindow.classList.remove('open');
+        chatToggle.classList.remove('hidden'); // Show button
         chatToggle.style.transform = 'scale(1)';
     } else {
+        // Open chat - hide button
         chatWindow.classList.add('open');
+        chatToggle.classList.add('hidden'); // Hide button
         chatToggle.style.transform = 'scale(1.1)';
     }
 }
-
 // Close chat when clicking outside
 function setupClickOutsideToClose() {
     const chatWindow = document.getElementById('chatWindow');

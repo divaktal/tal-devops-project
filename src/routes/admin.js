@@ -365,6 +365,191 @@ router.get('/blocked-slots/check', async (req, res) => {
     }
 });
 
+// Check for existing appointments before blocking
+router.post('/blocked-slots/check-appointments', async (req, res) => {
+    try {
+        const { 
+            date, 
+            start_time, 
+            end_time, 
+            all_day = false,
+            end_date,  // For date ranges
+            recurring_pattern // For weekly recurring
+        } = req.body;
+        
+        if (!date) {
+            return res.status(400).json({ error: 'Date is required' });
+        }
+        
+        // Array to store conflict information
+        const conflicts = [];
+        
+        // Helper function to check for appointments on a specific date
+        const checkDateForAppointments = async (checkDate, checkStartTime, checkEndTime, allDayCheck) => {
+            let query = '';
+            let params = [];
+            
+            if (allDayCheck) {
+                // Check all appointments for the day
+                query = `
+                    SELECT * FROM appointments 
+                    WHERE date = $1
+                    ORDER BY time
+                `;
+                params = [checkDate];
+            } else if (checkStartTime && checkEndTime) {
+                // Check appointments within time range
+                query = `
+                    SELECT * FROM appointments 
+                    WHERE date = $1 
+                    AND time BETWEEN $2 AND $3
+                    ORDER BY time
+                `;
+                params = [checkDate, checkStartTime, checkEndTime];
+            } else if (checkStartTime && !checkEndTime) {
+                // Check appointments from start time onward
+                query = `
+                    SELECT * FROM appointments 
+                    WHERE date = $1 
+                    AND time >= $2
+                    ORDER BY time
+                `;
+                params = [checkDate, checkStartTime];
+            } else if (!checkStartTime && checkEndTime) {
+                // Check appointments up to end time
+                query = `
+                    SELECT * FROM appointments 
+                    WHERE date = $1 
+                    AND time <= $2
+                    ORDER BY time
+                `;
+                params = [checkDate, checkEndTime];
+            }
+            
+            if (query) {
+                const result = await pool.query(query, params);
+                if (result.rows.length > 0) {
+                    return result.rows;
+                }
+            }
+            return [];
+        };
+        
+        // ========== DATE RANGE LOGIC ==========
+        if (end_date) {
+            const startDate = new Date(date);
+            const rangeEndDate = new Date(end_date);
+            
+            // Validate
+            if (rangeEndDate < startDate) {
+                return res.status(400).json({ error: 'End date must be after start date' });
+            }
+            
+            // Check each day in the range
+            const currentDate = new Date(startDate);
+            
+            while (currentDate <= rangeEndDate) {
+                const dateStr = currentDate.toISOString().split('T')[0];
+                const appointments = await checkDateForAppointments(
+                    dateStr, 
+                    start_time, 
+                    end_time, 
+                    all_day
+                );
+                
+                if (appointments.length > 0) {
+                    conflicts.push({
+                        date: dateStr,
+                        appointments: appointments,
+                        reason: all_day ? 'All day' : `${start_time} - ${end_time}`
+                    });
+                }
+                
+                // Move to next day
+                currentDate.setDate(currentDate.getDate() + 1);
+            }
+        }
+        // ========== WEEKLY RECURRING LOGIC ==========
+        else if (recurring_pattern && recurring_pattern.type === 'weekly') {
+            const { days, weeks } = recurring_pattern;
+            if (days && Array.isArray(days)) {
+                const baseDate = new Date(date);
+                
+                for (let week = 0; week < (weeks || 4); week++) {
+                    for (const dayIndex of days) {
+                        const slotDate = new Date(baseDate);
+                        
+                        // Calculate days to add
+                        const currentDayOfWeek = baseDate.getDay();
+                        let daysToAdd = (dayIndex - currentDayOfWeek + 7) % 7;
+                        
+                        // Skip if it's today (unless week > 0)
+                        if (week === 0 && daysToAdd === 0) {
+                            daysToAdd = 7; // Skip to next week
+                        } else {
+                            daysToAdd += (week * 7);
+                        }
+                        
+                        slotDate.setDate(slotDate.getDate() + daysToAdd);
+                        const slotDateStr = slotDate.toISOString().split('T')[0];
+                        
+                        // Check for appointments on this date
+                        const appointments = await checkDateForAppointments(
+                            slotDateStr, 
+                            start_time, 
+                            end_time, 
+                            all_day
+                        );
+                        
+                        if (appointments.length > 0) {
+                            conflicts.push({
+                                date: slotDateStr,
+                                appointments: appointments,
+                                reason: all_day ? 'All day' : `${start_time} - ${end_time}`
+                            });
+                        }
+                    }
+                }
+            }
+        }
+        // ========== SINGLE DAY LOGIC ==========
+        else {
+            // Check for appointments on this single day
+            const appointments = await checkDateForAppointments(
+                date, 
+                start_time, 
+                end_time, 
+                all_day
+            );
+            
+            if (appointments.length > 0) {
+                conflicts.push({
+                    date: date,
+                    appointments: appointments,
+                    reason: all_day ? 'All day' : `${start_time} - ${end_time}`
+                });
+            }
+        }
+        
+        res.json({
+            success: true,
+            hasConflicts: conflicts.length > 0,
+            conflicts: conflicts,
+            conflictCount: conflicts.length,
+            message: conflicts.length > 0 ? 
+                `Found ${conflicts.length} date(s) with existing appointments` : 
+                'No appointment conflicts found'
+        });
+        
+    } catch (error) {
+        console.error('Appointment check error:', error);
+        res.status(500).json({ 
+            error: 'Failed to check for appointment conflicts',
+            details: process.env.NODE_ENV === 'development' ? error.message : undefined
+        });
+    }
+});
+
 // Add blocked slot - ALL DAYS STORED AS INDIVIDUAL ENTRIES
 router.post('/blocked-slots', async (req, res) => {
     try {

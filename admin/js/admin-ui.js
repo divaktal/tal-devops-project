@@ -364,7 +364,7 @@ const AdminUI = {
                     const titles = {
                         'warning': 'Confirm Action',
                         'danger': 'Delete Confirmation',
-                        'info': 'Information',
+                        'info': 'Information Required',
                         'success': 'Success'
                     };
                     headerTitle.innerHTML = `<i class="${iconEl.className.split(' ')[0]} ${iconEl.className.split(' ')[1]}"></i> ${titles[type] || 'Confirm Action'}`;

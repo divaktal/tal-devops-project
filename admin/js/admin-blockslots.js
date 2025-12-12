@@ -3,6 +3,7 @@ class BlockSlotManager {
     constructor(admin) {
         this.admin = admin;
         this.isSubmitting = false;
+        this.conflictModal = null;
     }
     
     // This method is called from admin-ui.js
@@ -28,6 +29,9 @@ class BlockSlotManager {
         
         // Bind all events
         this.bindAllEvents();
+        
+        // Initialize conflict modal if not exists
+        this.initConflictModal();
     }
     
     bindAllEvents() {
@@ -189,6 +193,184 @@ class BlockSlotManager {
         }
     }
     
+    // ============ NEW METHOD: Check for appointment conflicts ============
+    async checkForAppointmentConflicts(blockData) {
+        try {
+            console.log('Checking for appointment conflicts...', blockData);
+            
+            const response = await fetch(`${this.admin.apiBase}/blocked-slots/check-appointments`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(blockData)
+            });
+            
+            const result = await response.json();
+            
+            if (response.ok && result.success) {
+                if (result.hasConflicts) {
+                    console.log('Found appointment conflicts:', result.conflicts);
+                    return {
+                        hasConflicts: true,
+                        conflicts: result.conflicts,
+                        conflictCount: result.conflictCount
+                    };
+                } else {
+                    return {
+                        hasConflicts: false,
+                        conflicts: []
+                    };
+                }
+            } else {
+                console.error('Failed to check appointments:', result.error);
+                return {
+                    hasConflicts: false,
+                    conflicts: [],
+                    error: result.error
+                };
+            }
+        } catch (error) {
+            console.error('Error checking appointments:', error);
+            return {
+                hasConflicts: false,
+                conflicts: [],
+                error: error.message
+            };
+        }
+    }
+    
+    // ============ NEW METHOD: Show conflict modal ============
+    initConflictModal() {
+        // Create conflict modal if it doesn't exist
+        if (!document.getElementById('conflictModal')) {
+            const modalHTML = `
+                <div id="conflictModal" class="modal hidden">
+                    <div class="modal-content" style="max-width: 600px;">
+                        <div class="modal-header">
+                            <h3><i class="fas fa-exclamation-triangle icon-warning"></i> Appointment Conflicts Found</h3>
+                            <button class="modal-close" onclick="admin.modules.ui.closeModal('conflictModal')">&times;</button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="conflict-alert">
+                                <p id="conflictMessage">The following dates have existing appointments that would be blocked:</p>
+                            </div>
+                            
+                            <div id="conflictsList" class="conflicts-list" style="max-height: 300px; overflow-y: auto; margin: 20px 0;"></div>
+                            
+                            <div class="conflict-actions" style="margin-top: 20px;">
+                                <p><strong>Options:</strong></p>
+                                <ol style="margin-left: 20px;">
+                                    <li>Cancel or reschedule the conflicting appointments first</li>
+                                    <li>Choose a different date/time range</li>
+                                    <li>Block only the remaining available slots</li>
+                                </ol>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button class="btn btn-secondary" onclick="admin.modules.ui.closeModal('conflictModal')">
+                                <i class="fas fa-times"></i> Cancel Block
+                            </button>
+                            <button class="btn btn-warning" id="viewAppointmentsBtn">
+                                <i class="fas fa-calendar-alt"></i> View Appointments
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Add modal to body
+            document.body.insertAdjacentHTML('beforeend', modalHTML);
+        }
+        
+        this.conflictModal = document.getElementById('conflictModal');
+    }
+    
+    showConflictModal(conflicts, blockData) {
+        // Store block data for later use
+        this.pendingBlockData = blockData;
+        this.conflictData = conflicts;
+        
+        const conflictList = document.getElementById('conflictsList');
+        if (conflictList) {
+            conflictList.innerHTML = '';
+            
+            conflicts.forEach(conflict => {
+                const conflictItem = document.createElement('div');
+                conflictItem.className = 'conflict-item';
+                conflictItem.style.padding = '10px';
+                conflictItem.style.borderBottom = '1px solid #eee';
+                conflictItem.style.marginBottom = '10px';
+                
+                let appointmentsHTML = '<div style="margin-left: 15px; margin-top: 5px;">';
+                conflict.appointments.forEach(app => {
+                    const time = app.time.substring(0, 5);
+                    appointmentsHTML += `
+                        <div class="appointment-info" style="background: #f8f9fa; padding: 8px; border-radius: 4px; margin-bottom: 5px;">
+                            <strong>${time}</strong> - ${app.firstname} ${app.familyname}<br>
+                            <small>Phone: ${app.phone}</small>
+                        </div>
+                    `;
+                });
+                appointmentsHTML += '</div>';
+                
+                conflictItem.innerHTML = `
+                    <div style="font-weight: bold; color: #dc3545;">
+                        <i class="fas fa-calendar-times"></i> ${conflict.date}
+                        <span style="font-size: 0.9em; color: #666; margin-left: 10px;">(${conflict.reason})</span>
+                    </div>
+                    <div style="font-size: 0.9em; color: #6c757d; margin-top: 5px;">
+                        ${conflict.appointments.length} appointment(s) found
+                    </div>
+                    ${appointmentsHTML}
+                `;
+                
+                conflictList.appendChild(conflictItem);
+            });
+        }
+        
+        const conflictMessage = document.getElementById('conflictMessage');
+        if (conflictMessage) {
+            const totalConflicts = conflicts.length;
+            const totalAppointments = conflicts.reduce((sum, conflict) => sum + conflict.appointments.length, 0);
+            conflictMessage.textContent = `Found ${totalConflicts} date(s) with ${totalAppointments} existing appointment(s) that would be blocked:`;
+        }
+        
+        // Update view appointments button
+        const viewBtn = document.getElementById('viewAppointmentsBtn');
+        if (viewBtn) {
+            const newViewBtn = viewBtn.cloneNode(true);
+            viewBtn.parentNode.replaceChild(newViewBtn, viewBtn);
+            newViewBtn.addEventListener('click', () => {
+                this.admin.modules.ui.closeModal('conflictModal');
+                this.showAppointmentsPageForConflicts(conflicts);
+            });
+        }
+        
+        // Show the modal
+        this.admin.modules.ui.showModal('conflictModal');
+    }
+    
+    showAppointmentsPageForConflicts(conflicts) {
+        // Show appointments page
+        this.admin.modules.ui.showPage('appointments');
+        
+        // Set active nav
+        const appointmentsNav = document.querySelector('.nav-item[data-page="appointments"]');
+        if (appointmentsNav) {
+            this.admin.modules.ui.setActiveNav(appointmentsNav);
+        }
+        
+        // Show a message about the conflicts
+        const conflictDates = conflicts.map(c => c.date).join(', ');
+        this.admin.modules.ui.showMessage('warning', 
+            `Please review appointments on: ${conflictDates} before creating block.`, 
+            8000
+        );
+        
+        // Optionally, you could add filtering to show only conflicting dates
+        // This would require modifications to appointments.js module
+    }
+    
+    // ============ UPDATED METHOD: Create block slot with conflict checking ============
     async createBlockSlot() {
         if (this.isSubmitting) {
             console.log('Preventing duplicate submission');
@@ -268,14 +450,34 @@ class BlockSlotManager {
             };
         }
         
+        // First check for appointment conflicts
         try {
             const submitBtn = document.querySelector('#addBlockForm button[type="submit"]');
             const originalText = submitBtn ? submitBtn.innerHTML : '';
             if (submitBtn) {
-                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating...';
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Checking appointments...';
                 submitBtn.disabled = true;
             }
             
+            const conflictCheck = await this.checkForAppointmentConflicts(blockData);
+            
+            if (submitBtn) {
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating...';
+            }
+            
+            if (conflictCheck.hasConflicts) {
+                // Show conflict modal instead of creating block
+                if (submitBtn) {
+                    submitBtn.innerHTML = originalText;
+                    submitBtn.disabled = false;
+                }
+                this.isSubmitting = false;
+                
+                this.showConflictModal(conflictCheck.conflicts, blockData);
+                return;
+            }
+            
+            // If no conflicts, proceed with creating the block
             const response = await fetch(`${this.admin.apiBase}/blocked-slots`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -302,6 +504,15 @@ class BlockSlotManager {
         } catch (error) {
             console.error('Error creating block:', error);
             this.admin.modules.ui.showMessage('error', 'Failed to create block: ' + error.message);
+            
+            const submitBtn = document.querySelector('#addBlockForm button[type="submit"]');
+            if (submitBtn) {
+                const originalText = submitBtn.getAttribute('data-original-text');
+                if (originalText) {
+                    submitBtn.innerHTML = originalText;
+                }
+                submitBtn.disabled = false;
+            }
         } finally {
             this.isSubmitting = false;
         }

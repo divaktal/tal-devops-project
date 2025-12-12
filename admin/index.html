@@ -483,22 +483,37 @@
     <div class="modal hidden" id="confirmationModal">
         <div class="modal-content modal-sm">
             <div class="modal-header">
-                <h3>Confirm Action</h3>
+                <h3 id="confirmationTitle">Confirm Action</h3>
                 <button class="modal-close" onclick="adminUI.closeModal('confirmationModal')">&times;</button>
             </div>
             <div class="modal-body">
                 <div class="confirmation-icon">
-                    <i class="fas fa-exclamation-triangle"></i>
+                    <i id="confirmationIcon" class="fas fa-exclamation-triangle icon-warning"></i>
                 </div>
                 <p id="confirmationMessage">Are you sure you want to perform this action?</p>
-            </div>
-            <div class="modal-actions">
-                <button type="button" class="btn-secondary" onclick="adminUI.closeModal('confirmationModal')">
-                    Cancel
-                </button>
-                <button type="button" class="btn-danger" id="confirmActionBtn">
-                    Confirm
-                </button>
+                <p id="confirmationDetails" class="hidden"></p>
+                
+                <!-- Delete Item Preview -->
+                <div id="deletePreview" class="hidden">
+                    <h4>Item to Delete:</h4>
+                    <div id="deleteItemName"></div>
+                    <div id="deleteItemDetails"></div>
+                </div>
+                
+                <!-- Photo Preview -->
+                <div id="photoPreview" class="hidden">
+                    <h4>Photo Preview:</h4>
+                    <img id="previewImage" src="" alt="Photo Preview">
+                </div>
+                
+                <div class="modal-actions">
+                    <button type="button" class="btn-secondary" onclick="adminUI.closeModal('confirmationModal')">
+                        <i class="fas fa-times"></i> Cancel
+                    </button>
+                    <button type="button" class="btn-danger" id="confirmActionBtn">
+                        <i class="fas fa-check"></i> Confirm
+                    </button>
+                </div>
             </div>
         </div>
     </div>

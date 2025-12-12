@@ -101,7 +101,7 @@
     cursor: pointer;
     font-size: 18px;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-    transition: transform 0.3s ease, background 0.3s ease;
+    transition: transform 0.3s ease, background 0.3s ease, opacity 0.3s ease, visibility 0.3s ease;
     z-index: 1000; /* Increased z-index */
     width: 50px;
     height: 50px;
@@ -109,6 +109,14 @@
     align-items: center;
     justify-content: center;
     pointer-events: auto !important;
+    opacity: 1;
+    visibility: visible;
+}
+
+.chat-toggle.hidden {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
 }
 
 .chat-toggle:hover {

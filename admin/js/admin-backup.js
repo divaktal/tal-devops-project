@@ -76,7 +76,7 @@ class BackupManager {
         }
     }
     
-    async loadBackupInfo() {
+    async loadDatabaseInfo() {
         try {
             const data = await this.admin.fetchData(`${this.admin.apiBase}/stats`);
             if (data.success) {
